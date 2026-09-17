@@ -30,10 +30,14 @@ export async function gasGet(action, params = {}) {
   try {
     const url = new URL(GAS_URL);
     url.searchParams.append('action', action);
+    url.searchParams.append('t', Date.now()); // Prevent caching
     for (const [key, value] of Object.entries(params)) {
       url.searchParams.append(key, value);
     }
-    const response = await fetch(url.toString());
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      cache: 'no-store'
+    });
     return await response.json();
   } catch (error) {
     console.error(`Error GAS GET [${action}]:`, error);
