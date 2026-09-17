@@ -1,4 +1,5 @@
-import { defineStore } from 'pinia'
+﻿const fs = require('fs');
+fs.writeFileSync('src/stores/documents.js', `import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { generateNomorSuratKeluar } from '../composables/useNomorSurat.js'
 import { getUnitKode } from '../composables/useKopSurat.js'
@@ -148,7 +149,7 @@ export const useDocumentsStore = defineStore('documents', () => {
     }
   }
 
-  function generateNomorManual(data, author) {
+  async function generateNomorManual(data, author) {
     const systemCount = documents.value.filter(d => d.unitId === data.unitId && d.nomorSurat).length
     const manualCount = agendaManual.value.filter(d => d.unitId === data.unitId).length
     const noUrut = systemCount + manualCount + 1
@@ -166,7 +167,7 @@ export const useDocumentsStore = defineStore('documents', () => {
       createdAt: new Date().toISOString()
     }
     agendaManual.value.push(record)
-    gasPost('save_document', record)
+    await gasPost('save_document', record)
     return record
   }
 
@@ -193,4 +194,6 @@ export const useDocumentsStore = defineStore('documents', () => {
     createDocument, advanceStatus, signDocument, rejectDocument,
     updateDocument, generateNomorManual, updateAgenda, deleteAgenda
   }
-})
+})`;
+fs.writeFileSync('src/stores/documents.js', code);
+

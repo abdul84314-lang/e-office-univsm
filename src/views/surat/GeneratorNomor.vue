@@ -27,9 +27,21 @@ function handleGenerate() {
   const result = docStore.generateNomorManual(form.value, auth.currentUser)
   lastGenerated.value = result
   
-  // Reset fields slightly for convenience
   form.value.perihal = ''
   form.value.tujuan = ''
+}
+
+async function handleEdit(item) {
+  const newVal = prompt('Edit Nomor Surat:', item.nomorSurat)
+  if (newVal !== null && newVal.trim() !== '') {
+    await docStore.updateAgenda(item.id, { nomorSurat: newVal })
+  }
+}
+
+async function handleDelete(item) {
+  if (confirm(`Hapus permanen nomor ${item.nomorSurat}?`)) {
+    await docStore.deleteAgenda(item.id)
+  }
 }
 </script>
 
@@ -111,11 +123,12 @@ function handleGenerate() {
                   <th class="text-left p-3 font-semibold text-gray-600">Tgl & Unit</th>
                   <th class="text-left p-3 font-semibold text-gray-600">Perihal / Tujuan</th>
                   <th class="text-left p-3 font-semibold text-gray-600">Dibuat Oleh</th>
+                  <th class="text-right p-3 font-semibold text-gray-600">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="docStore.sortedAgenda.length === 0">
-                  <td colspan="4" class="text-center py-10 text-gray-400">Belum ada riwayat nomor manual.</td>
+                  <td colspan="5" class="text-center py-10 text-gray-400">Belum ada riwayat nomor manual.</td>
                 </tr>
                 <tr v-for="item in docStore.sortedAgenda" :key="item.id" class="border-t hover:bg-gray-50">
                   <td class="p-3 font-mono font-bold text-primary-700 whitespace-nowrap">{{ item.nomorSurat }}</td>
@@ -130,6 +143,10 @@ function handleGenerate() {
                   <td class="p-3 text-gray-600 text-xs">
                     {{ item.createdBy }}<br/>
                     <span class="text-gray-400">{{ new Date(item.createdAt).toLocaleTimeString('id-ID') }}</span>
+                  </td>
+                  <td class="p-3 text-right">
+                    <button @click="handleEdit(item)" class="text-blue-600 hover:text-blue-800 text-xs font-bold mr-3">Edit</button>
+                    <button @click="handleDelete(item)" class="text-red-600 hover:text-red-800 text-xs font-bold">Hapus</button>
                   </td>
                 </tr>
               </tbody>

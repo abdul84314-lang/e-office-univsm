@@ -1,4 +1,5 @@
-import { defineStore } from 'pinia'
+﻿const fs = require('fs');
+fs.writeFileSync('src/stores/documents.js', `import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { generateNomorSuratKeluar } from '../composables/useNomorSurat.js'
 import { getUnitKode } from '../composables/useKopSurat.js'
@@ -193,4 +194,4 @@ export const useDocumentsStore = defineStore('documents', () => {
     createDocument, advanceStatus, signDocument, rejectDocument,
     updateDocument, generateNomorManual, updateAgenda, deleteAgenda
   }
-})
+})`)
