@@ -1,10 +1,11 @@
-import { defineStore } from 'pinia'
+﻿const fs = require('fs');
+fs.writeFileSync('src/stores/masterData.js', `import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getAllUnits as getSeedUnits, KODE_SURAT_LIST as getSeedKodeSurat } from '../data/orgData.js'
-import { gasGet, gasPost } from '../api/gasClient.js'
+import { gasGet, gasPost} from '../api/gasClient.js'
 
 export const useMasterDataStore = defineStore('masterData', () => {
-  const units = ref([...getSeedUnits()])
+  const units = ref(getSeedUnits())
   const kodeSurat = ref([...getSeedKodeSurat])
 
   const isFetching = ref(false)
@@ -21,7 +22,6 @@ export const useMasterDataStore = defineStore('masterData', () => {
         for (const u of seedUnits) {
           await gasPost('save_data', { table: 'Units', record: u })
         }
-        units.value = seedUnits
       }
 
       const resKode = await gasGet('get_table', { table: 'KodeSurat' })
@@ -30,10 +30,11 @@ export const useMasterDataStore = defineStore('masterData', () => {
       } else if (resKode && resKode.success && resKode.data.length === 0) {
         console.log('Seeding KodeSurat to DB...')
         for (const k of getSeedKodeSurat) {
-          k.id = k.singkatan // Give it an ID property for DB
+          // generate an ID 
+          k.singkatan = k.singkatan // use singkatan as original key, but DB needs 'id'
+          k.id = k.singkatan
           await gasPost('save_data', { table: 'KodeSurat', record: k })
         }
-        kodeSurat.value = [...getSeedKodeSurat]
       }
     } catch (e) {
       console.warn('Gagal load master data dari DB, fallback ke memori', e)
@@ -99,4 +100,6 @@ export const useMasterDataStore = defineStore('masterData', () => {
     updateKodeSurat,
     deleteKodeSurat
   }
-})
+})`
+);
+

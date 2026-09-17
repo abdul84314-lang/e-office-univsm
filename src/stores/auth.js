@@ -66,8 +66,31 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const isFetchingUsers = ref(false)
+
+  async function fetchUsers() {
+    isFetchingUsers.value = true
+    try {
+      const res = await gasGet('get_table', { table: 'Users' })
+      if (res && res.success && res.data && res.data.length > 0) {
+        users.value = res.data
+      } else if (res && res.success && res.data && res.data.length === 0) {
+        // Auto-seed initial users to DB
+        console.log('Seeding INITIAL_USERS to Database...')
+        for (const u of INITIAL_USERS) {
+          await gasPost('save_data', { table: 'Users', record: u })
+        }
+        users.value = [...INITIAL_USERS]
+      }
+    } catch (e) {
+      console.warn('Gagal load users dari DB, fallback ke memori', e)
+    } finally {
+      isFetchingUsers.value = false
+    }
+  }
+
   // --- CRUD Users for Admin ---
-  function addUser(userData) {
+  async function addUser(userData) {
     const newId = Math.max(...users.value.map(u => u.id), 0) + 1
     const newUser = {
       ...userData,
@@ -75,12 +98,14 @@ export const useAuthStore = defineStore('auth', () => {
       avatar: userData.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
     }
     users.value.push(newUser)
+    await gasPost('save_data', { table: 'Users', record: newUser })
   }
 
-  function updateUser(id, userData) {
+  async function updateUser(id, userData) {
     const idx = users.value.findIndex(u => u.id === id)
     if (idx !== -1) {
       users.value[idx] = { ...users.value[idx], ...userData }
+      await gasPost('update_data', { table: 'Users', record: users.value[idx] })
       // Update session if editing self
       if (currentUser.value?.id === id) {
         currentUser.value = { ...users.value[idx] }
@@ -89,11 +114,13 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function deleteUser(id) {
+  async function deleteUser(id) {
     users.value = users.value.filter(u => u.id !== id)
+    await gasPost('delete_data', { table: 'Users', id })
   }
 
   restoreSession()
+  fetchUsers()
 
   // Export MOCK_USERS for the login dropdown backward compatibility
   const MOCK_USERS = computed(() => users.value)
@@ -106,6 +133,7 @@ export const useAuthStore = defineStore('auth', () => {
     isUnitAdmin,
     isPimpinan,
     isRegularUser,
+    fetchUsers,
     loginWithCredentials, 
     logout, 
     MOCK_USERS,
