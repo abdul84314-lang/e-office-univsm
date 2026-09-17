@@ -1,6 +1,7 @@
-﻿<script setup>
+<script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { gasGet } from '../../api/gasClient.js'
 import { useAuthStore } from '../../stores/auth.js'
 import { useDocumentsStore } from '../../stores/documents.js'
 import { useMasterDataStore } from '../../stores/masterData.js'
@@ -86,9 +87,13 @@ const handleManualFile = (e) => {
 }
 
 const manualFileUrl = computed(() => {
-  const b64 = form.value.fileBase64 || doc.value?.fileBase64
   const mime = form.value.fileMime || doc.value?.fileMime || 'application/pdf'
+  const b64 = form.value.fileBase64
+  
   if (b64) return `data:${mime};base64,${b64}`
+  if (doc.value?.driveViewUrl) return doc.value.driveViewUrl
+  if (doc.value?.fileBase64) return `data:${mime};base64,${doc.value.fileBase64}`
+  
   return null
 })
 
@@ -170,10 +175,25 @@ const signDocBasah = async () => {
 const signDocTte = async () => {
   let extraData = { tteMethod: 'bsre' }
   
-  if (form.value.isManual && form.value.fileBase64) {
+  if (form.value.isManual) {
     try {
       const qrUrl = await QRCode.toDataURL(`https://e-office.univsm.ac.id/verify/${doc.value.id}`, { width: 150 })
-      extraData.fileBase64 = await stampPdfWithQR(form.value.fileBase64, qrUrl)
+      let targetB64 = form.value.fileBase64 || doc.value?.fileBase64
+      
+      // If base64 is empty but we have a driveFileId, fetch the base64 from Google Drive via backend
+      if (!targetB64 && doc.value?.driveFileId) {
+         console.log('Fetching Base64 from Google Drive Archive...')
+         const res = await gasGet('get_file_b64', { fileId: doc.value.driveFileId })
+         if (res && res.success) {
+           targetB64 = res.base64
+         }
+      }
+      
+      if (targetB64) {
+        extraData.fileBase64 = await stampPdfWithQR(targetB64, qrUrl)
+        // Ensure backend knows we are updating the Drive file with the new stamped PDF
+        if (doc.value?.driveFileId) extraData.driveFileId = doc.value.driveFileId 
+      }
     } catch (e) {
       console.error(e)
     }
