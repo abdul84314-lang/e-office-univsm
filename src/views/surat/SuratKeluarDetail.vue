@@ -36,7 +36,7 @@ const form = ref({
   kodeSurat: 'ST',
   unitId: auth.currentUser?.unitId ?? 'rektor',
   sifatTujuan: 'internal',
-  penandatanganId: 1,
+  penandatanganId: '',
   perihal: '',
   kepada: '',
   isiSurat: '',
@@ -140,6 +140,7 @@ const saveNomor = async () => {
 
 const saveDoc = async () => {
   if (!form.value.judul) return alert('Judul harus diisi!')
+  if (!form.value.penandatanganId) return alert('Penandatangan harus dipilih!')
   if (isCreateRoute.value) {
     const newDoc = await docStore.createDocument({ ...form.value }, auth.currentUser)
     router.push(`/surat-keluar/${newDoc.id}`)
