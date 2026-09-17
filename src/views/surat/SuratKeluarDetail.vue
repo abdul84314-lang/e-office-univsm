@@ -9,7 +9,7 @@ import StatusBadge from '../../components/common/StatusBadge.vue'
 import WorkflowStepper from '../../components/common/WorkflowStepper.vue'
 import DocumentKop from '../../components/common/DocumentKop.vue'
 import TteBlock from '../../components/common/TteBlock.vue'
-import { PDFDocument } from 'pdf-lib'
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import QRCode from 'qrcode'
 
 const props = defineProps({
@@ -29,6 +29,7 @@ const doc = computed(() => docStore.documents.find(d => d.id === props.id))
 
 const form = ref({
   isManual: false,
+  ttePos: 'kanan_tengah',
   fileBase64: null,
   fileMime: null,
   fileName: '',
@@ -97,22 +98,56 @@ const manualFileUrl = computed(() => {
   return null
 })
 
-// QR Stamping logic
-const stampPdfWithQR = async (base64Pdf, qrDataUrl) => {
+// QR Stamping logic with BSrE Standard Look
+const stampPdfWithQR = async (base64Pdf, qrDataUrl, signer) => {
   try {
     const existingPdfBytes = Uint8Array.from(atob(base64Pdf), c => c.charCodeAt(0))
     const pdfDoc = await PDFDocument.load(existingPdfBytes)
+    const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica)
+    const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+    
     const qrImageBytes = Uint8Array.from(atob(qrDataUrl.split(',')[1]), c => c.charCodeAt(0))
     const qrImage = await pdfDoc.embedPng(qrImageBytes)
     const pages = pdfDoc.getPages()
     const lastPage = pages[pages.length - 1]
-    const qrDims = qrImage.scale(0.5)
+    
+    // Scale QR down
+    const qrDims = qrImage.scale(0.35) 
+    
+    // Default position (Kanan Tengah - commonly hits the signature block gap)
+    let baseX = lastPage.getWidth() - 220
+    let baseY = 110
+    
+    if (form.value.ttePos === 'kanan_bawah') {
+      baseX = lastPage.getWidth() - 220
+      baseY = 50
+    } else if (form.value.ttePos === 'kiri_bawah') {
+      baseX = 50
+      baseY = 50
+    }
+    
+    // Draw QR
     lastPage.drawImage(qrImage, {
-      x: lastPage.getWidth() - qrDims.width - 50,
-      y: 50,
+      x: baseX,
+      y: baseY,
       width: qrDims.width,
       height: qrDims.height,
     })
+    
+    // Draw Text alongside QR
+    const textX = baseX + qrDims.width + 10
+    const textY = baseY + qrDims.height - 12
+    
+    lastPage.drawText('Ditandatangani secara elektronik oleh:', {
+      x: textX, y: textY, size: 7, font: helveticaBold, color: rgb(0.2, 0.2, 0.2)
+    })
+    lastPage.drawText(signer.name, {
+      x: textX, y: textY - 12, size: 8, font: helveticaBold, color: rgb(0.1, 0.1, 0.1)
+    })
+    lastPage.drawText(signer.jabatan, {
+      x: textX, y: textY - 24, size: 7, font: helvetica, color: rgb(0.3, 0.3, 0.3)
+    })
+
     const pdfBytes = await pdfDoc.save()
     let binary = ''
     for (let i = 0; i < pdfBytes.byteLength; i++) binary += String.fromCharCode(pdfBytes[i])
@@ -216,7 +251,7 @@ const signDocTte = async () => {
       }
       
       if (targetB64) {
-        extraData.fileBase64 = await stampPdfWithQR(targetB64, qrUrl)
+        extraData.fileBase64 = await stampPdfWithQR(targetB64, qrUrl, auth.currentUser)
         // Ensure backend knows we are updating the Drive file with the new stamped PDF
         if (doc.value?.driveFileId) extraData.driveFileId = doc.value.driveFileId 
       }
@@ -321,6 +356,15 @@ const handlePrint = () => {
                     <option v-for="user in potentialSigners" :key="user.id" :value="user.id">{{ user.name }} ({{ user.jabatan }})</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label class="form-label">Posisi TTE (Otomatis)</label>
+                <select v-model="form.ttePos" :disabled="!isEditMode" class="form-select">
+                  <option value="kanan_tengah">Kanan Tengah (Di area Tanda Tangan)</option>
+                  <option value="kanan_bawah">Kanan Bawah (Di pojok kanan bawah halaman)</option>
+                  <option value="kiri_bawah">Kiri Bawah (Di pojok kiri bawah halaman)</option>
+                </select>
+                <p class="text-[10px] text-gray-500 mt-1">Menentukan letak stempel QR TTE jika ditandatangani secara elektronik nanti.</p>
               </div>
             </div>
 
