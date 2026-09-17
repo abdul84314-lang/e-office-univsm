@@ -118,6 +118,21 @@ const stampPdfWithQR = async (base64Pdf, qrDataUrl) => {
   }
 }
 
+const isEditingNomor = ref(false)
+const manualNomor = ref('')
+
+const startEditNomor = () => {
+  manualNomor.value = doc.value?.nomorSurat || ''
+  isEditingNomor.value = true
+}
+
+const saveNomor = async () => {
+  if (doc.value) {
+    await docStore.updateDocument(doc.value.id, { nomorSurat: manualNomor.value || null })
+    isEditingNomor.value = false
+  }
+}
+
 const saveDoc = async () => {
   if (!form.value.judul) return alert('Judul harus diisi!')
   if (isCreateRoute.value) {
@@ -200,7 +215,15 @@ const handlePrint = () => {
               {{ isCreateRoute ? 'Buat Surat Keluar Baru' : (doc?.judul ?? 'Detail Surat') }}
             </h1>
             <p v-if="!isCreateRoute && doc" class="text-sm text-gray-500 mt-0.5 font-mono">
-              {{ doc.nomorSurat ?? doc.id }}
+              <span v-if="!isEditingNomor">{{ doc.nomorSurat ?? doc.id }}</span>
+              <div v-else class="flex items-center gap-2 mt-1">
+                <input v-model="manualNomor" type="text" class="form-input text-xs py-1 px-2 h-7 w-48" placeholder="Kosongkan u/ hapus" />
+                <button @click="saveNomor" class="btn-primary text-xs py-1 px-2 h-7">Simpan</button>
+                <button @click="isEditingNomor = false" class="btn-secondary text-xs py-1 px-2 h-7">Batal</button>
+              </div>
+              <button v-if="!isEditingNomor && doc.nomorSurat && (isAdmin || auth.currentUser?.role === 'tu')" @click="startEditNomor" class="text-xs text-blue-600 hover:underline">
+                [Edit / Hapus Nomor]
+              </button>
             </p>
           </div>
         </div>
