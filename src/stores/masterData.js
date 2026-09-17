@@ -12,7 +12,7 @@ export const useMasterDataStore = defineStore('masterData', () => {
   async function fetchMasterData() {
     isFetching.value = true
     try {
-      const resUnits = await gasGet('get_table', { table: 'Units' })
+      const resUnits = await gasPost('get_table', { table: 'Units' })
       if (resUnits && resUnits.success && resUnits.data.length > 0) {
         units.value = resUnits.data
       } else if (resUnits && resUnits.success && resUnits.data.length === 0) {
@@ -24,7 +24,7 @@ export const useMasterDataStore = defineStore('masterData', () => {
         units.value = seedUnits
       }
 
-      const resKode = await gasGet('get_table', { table: 'KodeSurat' })
+      const resKode = await gasPost('get_table', { table: 'KodeSurat' })
       if (resKode && resKode.success && resKode.data.length > 0) {
         kodeSurat.value = resKode.data
       } else if (resKode && resKode.success && resKode.data.length === 0) {

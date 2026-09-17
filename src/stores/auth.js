@@ -71,7 +71,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function fetchUsers() {
     isFetchingUsers.value = true
     try {
-      const res = await gasGet('get_table', { table: 'Users' })
+      const res = await gasPost('get_table', { table: 'Users' })
       if (res && res.success && res.data && res.data.length > 0) {
         users.value = res.data
       } else if (res && res.success && res.data && res.data.length === 0) {
