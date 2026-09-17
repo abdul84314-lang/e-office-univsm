@@ -74,8 +74,17 @@ export const useDocumentsStore = defineStore('documents', () => {
       statusHistory: [{ status: 'draft', at: new Date().toISOString(), by: author.name }],
       tte: null,
     }
+    
+    // Call GAS first before updating local state
+    const res = await gasPost('save_document', doc)
+    if (!res || !res.success) {
+      alert('Gagal menyimpan dokumen ke database! Error: ' + (res?.error || 'Koneksi terputus/File terlalu besar'))
+      console.error(res)
+      return null
+    }
+    
+    // Only push if backend save was successful
     documents.value.push(doc)
-    await gasPost('save_document', doc)
     return doc
   }
 
@@ -140,12 +149,27 @@ export const useDocumentsStore = defineStore('documents', () => {
     await gasPost('update_document', doc)
   }
 
-  async function updateDocument(docId, data) {
-    const doc = documents.value.find(d => d.id === docId)
-    if (doc) {
-      Object.assign(doc, data)
-      await gasPost('update_document', doc)
+  async function updateDocument(id, updates) {
+    const idx = documents.value.findIndex(d => d.id === id)
+    if (idx !== -1) {
+      const updatedDoc = { ...documents.value[idx], ...updates }
+      const res = await gasPost('update_document', updatedDoc)
+      
+      if (!res || !res.success) {
+        alert('Gagal mengupdate dokumen ke database! Error: ' + (res?.error || 'Koneksi terputus/File terlalu besar'))
+        return false
+      }
+      
+      // Update local state ONLY if backend succeeds
+      // Note: Backend strips fileBase64, so we should keep the stripped version 
+      // or rely on a fresh fetch. But for now, we'll just merge what backend would have.
+      if (updates.fileBase64 && res.id) {
+         delete updatedDoc.fileBase64
+      }
+      documents.value[idx] = updatedDoc
+      return true
     }
+    return false
   }
 
   function generateNomorManual(data, author) {

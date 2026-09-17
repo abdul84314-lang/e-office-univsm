@@ -141,9 +141,12 @@ const saveNomor = async () => {
 const saveDoc = async () => {
   if (!form.value.judul) return alert('Judul harus diisi!')
   if (!form.value.penandatanganId) return alert('Penandatangan harus dipilih!')
+  if (form.value.isManual && !form.value.fileBase64 && !doc.value?.driveFileId) return alert('File PDF harus diunggah!')
   if (isCreateRoute.value) {
     const newDoc = await docStore.createDocument({ ...form.value }, auth.currentUser)
-    router.push(`/surat-keluar/${newDoc.id}`)
+    if (newDoc) {
+      router.push(`/surat-keluar/${newDoc.id}`)
+    }
   } else if (isEditMode.value && doc.value) {
     await docStore.updateDocument(doc.value.id, { ...form.value })
   }
