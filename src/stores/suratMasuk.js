@@ -79,6 +79,16 @@ export const useSuratMasukStore = defineStore('suratMasuk', () => {
     return false
   }
 
+  async function updateSuratMasuk(id, payload) {
+    const idx = documents.value.findIndex(d => d.id === id)
+    if (idx !== -1) {
+      documents.value[idx] = { ...documents.value[idx], ...payload }
+      await gasPost('save_document', documents.value[idx])
+      return documents.value[idx]
+    }
+    return null
+  }
+
   const sortedDocuments = computed(() =>
     [...documents.value].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
   )
@@ -93,6 +103,7 @@ export const useSuratMasukStore = defineStore('suratMasuk', () => {
     createSuratMasuk,
     addDisposisi,
     selesaikanSurat,
-    deleteSuratMasuk
+    deleteSuratMasuk,
+    updateSuratMasuk
   }
 })

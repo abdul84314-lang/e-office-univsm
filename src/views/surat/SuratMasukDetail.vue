@@ -18,21 +18,40 @@ const smStore = useSuratMasukStore()
 const isCreateRoute = computed(() => props.mode === 'create' || route.name === 'SuratMasukBuat')
 const doc = computed(() => smStore.documents.find(d => d.id === props.id))
 
+const isSuperAdmin = computed(() => auth.isAdmin) // From store
+const isEditMode = ref(false)
+const isEditing = computed(() => isCreateRoute.value || isEditMode.value)
+
 // Form for registering new mail
 const form = ref({
   asalSurat: '',
   nomorSuratAsal: '',
   tanggalSurat: '',
   perihal: '',
-  penerimaId: 1, // Usually directed to Rektor first
+  penerimaId: 1,
   fileBase64: null,
   fileMime: null,
   fileName: '',
 })
 
+watch(doc, (newVal) => {
+  if (newVal) {
+    form.value = {
+      asalSurat: newVal.asalSurat || '',
+      nomorSuratAsal: newVal.nomorSuratAsal || '',
+      tanggalSurat: newVal.tanggalSurat || '',
+      perihal: newVal.perihal || '',
+      penerimaId: newVal.penerimaId || 1,
+      fileBase64: null,
+      fileMime: null,
+      fileName: '',
+    }
+  }
+}, { immediate: true })
+
 // RBAC
-const isAdmin = computed(() => auth.isAdmin)
-const isTU = computed(() => auth.isAdmin || auth.isUnitAdmin || auth.currentUser?.unitId === 'tu')
+const isAdmin = computed(() => auth.currentUser?.role === 'admin' || auth.isAdmin)
+const isTU = computed(() => isAdmin.value || auth.currentUser?.unitId === 'tu')
 
 const handleFileUpload = (e) => {
   const file = e.target.files[0]
@@ -57,13 +76,29 @@ const previewUrl = computed(() => {
 })
 
 async function handleRegister() {
-  if (!form.value.asalSurat || !form.value.nomorSuratAsal || !form.value.perihal || !form.value.fileBase64) {
-    alert('Harap lengkapi Asal Surat, Nomor, Perihal, dan Upload Dokumen PDF.')
+  if (!form.value.asalSurat || !form.value.nomorSuratAsal || !form.value.perihal) {
+    alert('Harap lengkapi Asal Surat, Nomor, dan Perihal.')
     return
   }
-  const newDoc = await smStore.createSuratMasuk({ ...form.value })
-  alert('Surat masuk berhasil diregistrasi!')
-  router.push(`/surat-masuk/${newDoc.id}`)
+
+  if (isCreateRoute.value) {
+    if (!form.value.fileBase64) return alert('Upload Dokumen PDF wajib saat registrasi baru.')
+    const newDoc = await smStore.createSuratMasuk({ ...form.value })
+    alert('Surat masuk berhasil diregistrasi!')
+    router.push(`/surat-masuk/${newDoc.id}`)
+  } else {
+    // Edit mode
+    const updateData = { ...form.value }
+    // Remove empty file data so we don't overwrite if not uploading a new one
+    if (!updateData.fileBase64) {
+      delete updateData.fileBase64
+      delete updateData.fileMime
+      delete updateData.fileName
+    }
+    await smStore.updateSuratMasuk(doc.value.id, updateData)
+    alert('Perubahan surat masuk berhasil disimpan!')
+    isEditMode.value = false
+  }
 }
 
 // Disposisi state
@@ -112,19 +147,20 @@ function deleteDoc() {
     <!-- Header -->
     <div class="flex items-center gap-4">
       <button class="btn-secondary btn-sm" @click="router.back()">Kembali</button>
+      <button v-if="!isCreateRoute && isSuperAdmin && !isEditMode" class="btn-secondary btn-sm" @click="isEditMode = true">Edit Surat</button>
       <button v-if="!isCreateRoute && isAdmin" class="btn-danger btn-sm" @click="deleteDoc">Hapus Surat</button>
       <div class="flex-1">
         <h1 class="text-xl font-bold text-gray-900">
-          {{ isCreateRoute ? 'Registrasi Surat Masuk Baru' : 'Detail Surat Masuk' }}
+          {{ isCreateRoute ? 'Registrasi Surat Masuk Baru' : (isEditMode ? 'Edit Surat Masuk' : 'Detail Surat Masuk') }}
         </h1>
         <p v-if="!isCreateRoute && doc" class="text-sm text-gray-500 font-mono">{{ doc.id }}</p>
       </div>
     </div>
 
-    <!-- ── Create Mode ─────────────────────────────────────────── -->
-    <template v-if="isCreateRoute">
-      <div v-if="isTU" class="card space-y-4 border-l-4 border-l-blue-500">
-        <h2 class="font-semibold text-gray-800 border-b pb-2">Formulir Registrasi Surat Masuk</h2>
+    <!-- ── Create / Edit Mode ────────────────────────────────────── -->
+    <template v-if="isEditing">
+      <div v-if="isTU || isSuperAdmin" class="card space-y-4 border-l-4 border-l-blue-500">
+        <h2 class="font-semibold text-gray-800 border-b pb-2">{{ isCreateRoute ? 'Formulir Registrasi Surat Masuk' : 'Edit Surat Masuk' }}</h2>
         
         <div class="grid grid-cols-2 gap-4">
           <div>
@@ -146,9 +182,10 @@ function deleteDoc() {
             </select>
           </div>
           <div class="col-span-2">
-            <label class="form-label">Upload Surat Masuk (PDF) <span class="text-red-500">*</span></label>
+            <label class="form-label">Upload Surat Masuk (PDF) <span v-if="isCreateRoute" class="text-red-500">*</span></label>
             <input type="file" accept="application/pdf" @change="handleFileUpload" class="form-input" />
             <p v-if="form.fileName" class="text-xs text-green-600 mt-1">File terpilih: {{ form.fileName }}</p>
+            <p v-else-if="!isCreateRoute && doc?.fileLampiran" class="text-xs text-blue-600 mt-1">File tersimpan: {{ doc.fileLampiran }} (Unggah baru untuk mengganti)</p>
           </div>
           <div class="col-span-2">
             <label class="form-label">Perihal / Ringkasan Isi <span class="text-red-500">*</span></label>
@@ -156,12 +193,15 @@ function deleteDoc() {
           </div>
         </div>
 
-        <div class="flex justify-end pt-4">
-          <button class="btn-primary" @click="handleRegister">💾 Simpan & Registrasi Surat</button>
+        <div class="flex justify-end gap-2 pt-4">
+          <button v-if="!isCreateRoute" class="btn-secondary" @click="isEditMode = false">Batal</button>
+          <button class="btn-primary" @click="handleRegister">
+            {{ isCreateRoute ? '💾 Simpan & Registrasi Surat' : 'Simpan Perubahan' }}
+          </button>
         </div>
       </div>
       <div v-else class="card bg-red-50 text-red-700">
-        Anda tidak memiliki akses untuk meregistrasi surat masuk. Hubungi Bagian Tata Usaha.
+        Anda tidak memiliki akses.
       </div>
     </template>
 

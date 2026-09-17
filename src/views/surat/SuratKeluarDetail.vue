@@ -69,10 +69,16 @@ watch(doc, (d) => {
 }, { immediate: true })
 
 const isPembuat = computed(() => doc.value?.createdBy === auth.currentUser?.id)
-const isAdmin = computed(() => auth.currentUser?.role === 'admin')
+const isSuperAdmin = computed(() => auth.isAdmin) // From store
+const isAdmin = computed(() => auth.currentUser?.role === 'admin' || auth.isAdmin)
 const isPenandatangan = computed(() => doc.value?.penandatanganId === auth.currentUser?.id)
 
-const isEditMode = computed(() => isCreateRoute.value || (doc.value?.status === 'draft' && (isPembuat.value || isAdmin.value)))
+const isEditMode = computed(() => {
+  if (isCreateRoute.value) return true
+  if (isSuperAdmin.value) return true // Super Admin can always edit
+  if (doc.value?.status === 'draft' && (isPembuat.value || isAdmin.value)) return true
+  return false
+})
 
 // Handle PDF manual
 const handleManualFile = (e) => {

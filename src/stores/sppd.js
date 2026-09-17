@@ -69,9 +69,12 @@ export const useSppdStore = defineStore('sppd', () => {
     })
   }
 
-  function deleteSppd(id) {
+  async function deleteSppd(id) {
     const idx = sppdList.value.findIndex(s => s.id === id)
-    if (idx !== -1) sppdList.value.splice(idx, 1)
+    if (idx !== -1) {
+      sppdList.value.splice(idx, 1)
+      await gasPost('delete_data', { table: 'SPPD', id })
+    }
   }
 
   return {

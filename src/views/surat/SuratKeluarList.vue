@@ -161,7 +161,7 @@ const filtered = computed(() => {
                   </RouterLink>
                   
                   <RouterLink
-                    v-if="doc.status === 'draft' && (auth.isAdmin || auth.currentUser?.id === doc.createdBy)"
+                    v-if="(doc.status === 'draft' && auth.currentUser?.id === doc.createdBy) || auth.isAdmin"
                     :to="`/surat-keluar/${doc.id}`"
                     class="p-1.5 text-amber-600 hover:bg-amber-50 rounded"
                     title="Edit Dokumen"
