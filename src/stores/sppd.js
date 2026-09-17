@@ -1,4 +1,4 @@
-﻿import { defineStore } from 'pinia'
+import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { generateNomorSppd } from '../composables/useNomorSurat.js'
 import { getUnitKode } from '../composables/useKopSurat.js'
@@ -64,7 +64,8 @@ export const useSppdStore = defineStore('sppd', () => {
       roleKey: sppd.sppdRole,
       jumlahHari: sppd.jumlahHari,
       biayaTransport: sppd.biayaTransport,
-      biayaPenginapan: sppd.biayaPenginapan
+      biayaPenginapan: sppd.biayaPenginapan,
+      travelers: sppd.travelers
     })
   }
 

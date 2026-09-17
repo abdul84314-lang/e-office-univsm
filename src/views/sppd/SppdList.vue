@@ -66,8 +66,8 @@ function getZoneLabel(zoneId) {
                 {{ sppd.nomorSurat }}
               </td>
               <td class="table-cell">
-                <p class="font-medium text-sm">{{ sppd.nama }}</p>
-                <p class="text-xs text-gray-400">{{ sppd.nip }}</p>
+                <p class="font-medium text-sm">{{ sppd.travelers?.[0]?.nama || sppd.nama }} <span v-if="sppd.travelers?.length > 1" class="text-xs text-blue-600 ml-1">(+{{ sppd.travelers.length - 1 }} pengikut)</span></p>
+                <p class="text-xs text-gray-400">{{ sppd.travelers?.[0]?.nip || sppd.nip }}</p>
               </td>
               <td class="table-cell text-sm">{{ sppd.tujuan }}</td>
               <td class="table-cell text-xs text-gray-600 max-w-[160px]">

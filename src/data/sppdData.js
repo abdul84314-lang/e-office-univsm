@@ -1,5 +1,5 @@
 /**
- * sppdData.js — Official YSBP Standar Perjalanan Dinas matrix
+ * sppdData.js â€” Official YSBP Standar Perjalanan Dinas matrix
  * Source: STANDAR PERJALANAN DINAS YSBP GROUP (official table)
  *
  * Columns (sppdKey):
@@ -22,7 +22,7 @@ export const SPPD_ZONES = [
 ]
 
 /**
- * Matrix: zone → role → { uangHarian, penginapan }
+ * Matrix: zone â†’ role â†’ { uangHarian, penginapan }
  * Transport: '-' = using operasional vehicle (no reimbursement), 'real_cost' = real cost reimbursement
  */
 export const SPPD_MATRIX = {
@@ -83,7 +83,7 @@ export const SPPD_MATRIX = {
       staf:        100000,
     },
     penginapan: {
-      // Uses Rumah Singgah Banjarbaru — no charge
+      // Uses Rumah Singgah Banjarbaru â€” no charge
       rektor:      0,
       warek:       0,
       dekan:       0,
@@ -189,18 +189,25 @@ export function getPenginapanMax(zoneId, roleKey) {
  * @param {number} biayaPenginapan (actual input, capped at max if needed)
  * @returns {{ uangHarian, totalUangHarian, biayaTransport, biayaPenginapan, totalPagu }}
  */
-export function calculateSppd({ zoneId, roleKey, jumlahHari, biayaTransport, biayaPenginapan }) {
-  const uh = getUangHarian(zoneId, roleKey)
-  const totalUH = uh * jumlahHari
+export function calculateSppd({ zoneId, roleKey, jumlahHari, biayaTransport, biayaPenginapan, travelers = [] }) {
+  const roles = (travelers && travelers.length > 0) ? travelers.map(t => t.sppdRole || 'staf') : [roleKey || 'staf']
+  let totalUH = 0
+  let rincianHarian = []
+  roles.forEach(role => {
+    const uh = getUangHarian(zoneId, role)
+    totalUH += (uh * jumlahHari)
+    rincianHarian.push({ role, uh, total: uh * jumlahHari })
+  })
   const totalPagu = totalUH + Number(biayaTransport || 0) + Number(biayaPenginapan || 0)
   return {
-    uangHarianSatuan: uh,
+    uangHarianSatuan: rincianHarian[0]?.uh || 0,
     totalUangHarian:  totalUH,
     biayaTransport:   Number(biayaTransport || 0),
     biayaPenginapan:  Number(biayaPenginapan || 0),
     totalPagu,
     transportMode:    SPPD_MATRIX[zoneId]?.transportMode ?? '-',
     notes:            SPPD_MATRIX[zoneId]?.notes ?? '',
+    rincianHarian
   }
 }
 
