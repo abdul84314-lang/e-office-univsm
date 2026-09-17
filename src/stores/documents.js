@@ -40,7 +40,8 @@ export const useDocumentsStore = defineStore('documents', () => {
     try {
       const res = await gasGet('get_documents')
       if (res && res.success) {
-        documents.value = res.documents
+        // Only keep SuratKeluar
+        documents.value = res.documents.filter(d => d.type === 'SuratKeluar' || (!d.isSPPD && !d.asalSurat))
       }
     } catch (e) {
       console.error('Failed to fetch documents', e)
@@ -63,7 +64,8 @@ export const useDocumentsStore = defineStore('documents', () => {
 
   async function createDocument(data, author) {
     const doc = {
-      id: DOC- + new Date().getTime(),
+      id: 'DOC-' + new Date().getTime(),
+      type: 'SuratKeluar',
       ...data,
       createdBy: author.id,
       nomorSurat: null,
@@ -90,22 +92,14 @@ export const useDocumentsStore = defineStore('documents', () => {
     if (nextStatus === 'penomoran' && !doc.nomorSurat) {
       const count = documents.value.filter(d => d.unitId === doc.unitId && d.nomorSurat).length + 1
       doc.nomorSurat = generateNomorSuratKeluar({
-        noUrut: count,
-        kodeSurat: doc.kodeSurat,
-        unitKode: getUnitKode(doc.unitId),
-        date: new Date(),
+        noUrut: count, kodeSurat: doc.kodeSurat, unitKode: getUnitKode(doc.unitId), date: new Date(),
       })
     }
 
     if (nextStatus === 'selesai' && signerUser) {
       doc.tte = {
         tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
-        signer: {
-          nama: signerUser.name,
-          jabatan: signerUser.jabatan,
-          nidn: signerUser.nidn,
-          nik: signerUser.nik
-        }
+        signer: { nama: signerUser.name, jabatan: signerUser.jabatan, nidn: signerUser.nidn, nik: signerUser.nik }
       }
     }
 
@@ -122,24 +116,16 @@ export const useDocumentsStore = defineStore('documents', () => {
     if (!doc.nomorSurat) {
       const count = documents.value.filter(d => d.unitId === doc.unitId && d.nomorSurat).length + 1
       doc.nomorSurat = generateNomorSuratKeluar({
-        noUrut: count,
-        kodeSurat: doc.kodeSurat,
-        unitKode: getUnitKode(doc.unitId),
-        date: new Date(),
+        noUrut: count, kodeSurat: doc.kodeSurat, unitKode: getUnitKode(doc.unitId), date: new Date(),
       })
     }
 
     Object.assign(doc, extraData)
 
-    if (signerUser) {
+    if (signerUser && !doc.tte) {
       doc.tte = {
         tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
-        signer: {
-          nama: signerUser.name,
-          jabatan: signerUser.jabatan,
-          nidn: signerUser.nidn,
-          nik: signerUser.nik
-        }
+        signer: { nama: signerUser.name, jabatan: signerUser.jabatan, nidn: signerUser.nidn, nik: signerUser.nik }
       }
     }
 
@@ -151,7 +137,6 @@ export const useDocumentsStore = defineStore('documents', () => {
     if (!doc) return
     doc.status = 'draft'
     doc.statusHistory.push({ status: 'draft', at: new Date().toISOString(), by: authorName, note: reason })
-    
     await gasPost('update_document', doc)
   }
 
@@ -169,10 +154,7 @@ export const useDocumentsStore = defineStore('documents', () => {
     const noUrut = systemCount + manualCount + 1
 
     const nomorSurat = generateNomorSuratKeluar({
-      noUrut,
-      kodeSurat: data.kodeSurat,
-      unitKode: getUnitKode(data.unitId),
-      date: new Date(data.tanggal),
+      noUrut, kodeSurat: data.kodeSurat, unitKode: getUnitKode(data.unitId), date: new Date(data.tanggal),
     })
 
     const record = {
@@ -182,30 +164,14 @@ export const useDocumentsStore = defineStore('documents', () => {
       createdBy: author.name,
       createdAt: new Date().toISOString()
     }
-
     agendaManual.value.push(record)
     return record
   }
 
   return {
-    documents,
-    agendaManual,
-    isLoading,
-    DOCUMENT_STATUSES,
-    DEFAULT_SIGNER,
-    totalDocuments,
-    pendingApprovals,
-    sortedDocuments,
-    sortedAgenda,
-    fetchDocuments,
-    getStatusInfo,
-    getNextStatus,
-    getPrevStatus,
-    createDocument,
-    advanceStatus,
-    signDocument,
-    rejectDocument,
-    updateDocument,
-    generateNomorManual
+    documents, agendaManual, isLoading, DOCUMENT_STATUSES, DEFAULT_SIGNER,
+    totalDocuments, pendingApprovals, sortedDocuments, sortedAgenda,
+    fetchDocuments, getStatusInfo, getNextStatus, getPrevStatus,
+    createDocument, advanceStatus, signDocument, rejectDocument, updateDocument, generateNomorManual
   }
 })

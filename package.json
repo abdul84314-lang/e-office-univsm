@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@vueuse/core": "^15.0.0",
+    "pdf-lib": "^1.17.1",
     "pinia": "^4.0.3",
+    "qrcode": "^1.5.4",
     "vue": "^3.5.42",
     "vue-router": "^4.6.4"
   },
