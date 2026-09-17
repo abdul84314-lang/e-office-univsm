@@ -25,23 +25,44 @@ const form = ref({
   tanggalSurat: '',
   perihal: '',
   penerimaId: 1, // Usually directed to Rektor first
+  fileBase64: null,
+  fileMime: null,
+  fileName: '',
 })
 
 // RBAC
 const isAdmin = computed(() => auth.isAdmin)
 const isTU = computed(() => auth.isAdmin || auth.isUnitAdmin || auth.currentUser?.unitId === 'tu')
+
+const handleFileUpload = (e) => {
+  const file = e.target.files[0]
+  if (!file) return
+  form.value.fileName = file.name
+  form.value.fileMime = file.type
+  const reader = new FileReader()
+  reader.onload = (ev) => form.value.fileBase64 = ev.target.result.split(',')[1]
+  reader.readAsDataURL(file)
+}
+
 const isTujuanDisposisi = computed(() => doc.value?.penerimaId === auth.currentUser?.id || isAdmin.value)
 const isPenerimaTindakLanjut = computed(() => doc.value?.disposisi?.kepadaId === auth.currentUser?.id || isAdmin.value)
 
 // Potential recipients of disposition
 const pimpinanList = computed(() => auth.users.filter(u => ['rektor', 'warek', 'dekan', 'wakil_dekan', 'kabag'].includes(u.sppdRole)))
 
-function handleRegister() {
-  if (!form.value.asalSurat || !form.value.nomorSuratAsal || !form.value.perihal) {
-    alert('Harap lengkapi Asal Surat, Nomor, dan Perihal.')
+const previewUrl = computed(() => {
+  if (doc.value?.driveViewUrl) return doc.value.driveViewUrl
+  if (doc.value?.fileBase64) return `data:${doc.value.fileMime || 'application/pdf'};base64,${doc.value.fileBase64}`
+  return null
+})
+
+async function handleRegister() {
+  if (!form.value.asalSurat || !form.value.nomorSuratAsal || !form.value.perihal || !form.value.fileBase64) {
+    alert('Harap lengkapi Asal Surat, Nomor, Perihal, dan Upload Dokumen PDF.')
     return
   }
-  const newDoc = smStore.createSuratMasuk({ ...form.value })
+  const newDoc = await smStore.createSuratMasuk({ ...form.value })
+  alert('Surat masuk berhasil diregistrasi!')
   router.push(`/surat-masuk/${newDoc.id}`)
 }
 
@@ -125,6 +146,11 @@ function deleteDoc() {
             </select>
           </div>
           <div class="col-span-2">
+            <label class="form-label">Upload Surat Masuk (PDF) <span class="text-red-500">*</span></label>
+            <input type="file" accept="application/pdf" @change="handleFileUpload" class="form-input" />
+            <p v-if="form.fileName" class="text-xs text-green-600 mt-1">File terpilih: {{ form.fileName }}</p>
+          </div>
+          <div class="col-span-2">
             <label class="form-label">Perihal / Ringkasan Isi <span class="text-red-500">*</span></label>
             <textarea v-model="form.perihal" class="form-textarea" rows="3" placeholder="Ringkasan isi surat masuk..."></textarea>
           </div>
@@ -187,10 +213,13 @@ function deleteDoc() {
             <p class="text-gray-500 text-xs">Perihal</p>
             <p class="font-medium bg-gray-50 p-3 rounded border border-gray-100 mt-1">{{ doc.perihal }}</p>
           </div>
-          <div class="md:col-span-2">
-            <p class="text-gray-500 text-xs">File Scan / Lampiran</p>
-            <div class="mt-1 flex items-center gap-2">
-              <span class="text-primary-600 hover:underline cursor-pointer flex items-center gap-1">
+          <div v-if="previewUrl" class="card bg-white mt-4 relative w-full h-[600px] p-0 overflow-hidden">
+            <iframe :src="previewUrl" class="w-full h-full border-0"></iframe>
+          </div>
+          <div v-else class="mt-6 border-t border-gray-100 pt-4">
+            <h3 class="font-semibold text-gray-800 mb-2">File Terlampir</h3>
+            <div class="flex items-center gap-2 p-3 bg-gray-50 rounded border border-gray-200 w-max">
+              <span class="text-primary-600 flex items-center gap-1">
                 📄 {{ doc.fileLampiran || 'surat_scan.pdf' }}
               </span>
               <span class="text-xs text-gray-400">(Tampilan Preview Belum Tersedia)</span>

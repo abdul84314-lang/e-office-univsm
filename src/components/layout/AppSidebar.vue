@@ -40,7 +40,8 @@ const navItems = computed(() => {
     items.push({
       group: 'Panel Pimpinan',
       items: [
-        { name: 'Butuh Verifikasi / TTE', to: '/surat-keluar?filter=action_needed', icon: 'document' },
+        { name: 'Butuh Verifikasi', to: '/surat-keluar?filter=need_verifikasi', icon: 'document' },
+        { name: 'Butuh Pengesahan / TTE', to: '/surat-keluar?filter=need_tte', icon: 'office' },
         { name: 'Disposisi Masuk', to: '/surat-masuk?filter=action_needed', icon: 'inbox' },
       ],
     })

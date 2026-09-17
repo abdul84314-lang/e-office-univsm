@@ -20,26 +20,27 @@ const deleteDoc = async (id) => {
 }
 
 onMounted(() => {
-  if (route.query.filter === 'action_needed') {
-    filterStatus.value = 'action_needed'
-  }
+  if (route.query.filter === 'need_verifikasi') filterStatus.value = 'need_verifikasi'
+  else if (route.query.filter === 'need_tte') filterStatus.value = 'need_tte'
 })
 
 watch(() => route.query.filter, (newVal) => {
-  if (newVal === 'action_needed') filterStatus.value = 'action_needed'
+  if (newVal === 'need_verifikasi') filterStatus.value = 'need_verifikasi'
+  else if (newVal === 'need_tte') filterStatus.value = 'need_tte'
   else filterStatus.value = ''
 })
 
 const filtered = computed(() => {
   let list = docStore.sortedDocuments
   
-  // Custom Filter Pimpinan: Butuh Verifikasi / TTE
-  if (filterStatus.value === 'action_needed') {
+  if (filterStatus.value === 'need_verifikasi') {
     list = list.filter(d => {
       const isVerifikator = auth.isAdmin || (d.unitId === auth.currentUser?.unitId && (auth.isPimpinan || ['kabag', 'wakil_dekan', 'dekan', 'warek', 'rektor'].includes(auth.currentUser?.sppdRole)))
-      const canVerify = (d.status === 'verifikasi' || d.status === 'pengesahan') && isVerifikator
-      const canSign = d.status === 'menunggu_tte' && (d.penandatanganId === auth.currentUser?.id || auth.isAdmin)
-      return canVerify || canSign
+      return d.status === 'verifikasi' && isVerifikator
+    })
+  } else if (filterStatus.value === 'need_tte') {
+    list = list.filter(d => {
+      return d.status === 'menunggu_tte' && (d.penandatanganId === auth.currentUser?.id || auth.isAdmin)
     })
   } else if (filterStatus.value) {
     list = list.filter(d => d.status === filterStatus.value)
@@ -83,6 +84,9 @@ const filtered = computed(() => {
       />
       <select v-model="filterStatus" class="form-select w-auto">
         <option value="">Semua Status</option>
+        <option value="need_verifikasi">! Butuh Verifikasi Saya</option>
+        <option value="need_tte">! Butuh Pengesahan / TTE Saya</option>
+        <option disabled>──────────</option>
         <option v-for="s in docStore.DOCUMENT_STATUSES" :key="s.key" :value="s.key">
           {{ s.label }}
         </option>

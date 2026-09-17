@@ -6,11 +6,10 @@ import { gasGet, gasPost } from '../api/gasClient.js'
 
 export const DOCUMENT_STATUSES = [
   { key: 'draft', label: 'Draft', color: 'gray', step: 0 },
-  { key: 'verifikasi', label: 'Verifikasi', color: 'yellow', step: 1 },
-  { key: 'pengesahan', label: 'Pengesahan', color: 'orange', step: 2 },
-  { key: 'penomoran', label: 'Penomoran TU', color: 'blue', step: 3 },
-  { key: 'menunggu_tte', label: 'Menunggu TTE', color: 'purple', step: 4 },
-  { key: 'selesai', label: 'Selesai', color: 'green', step: 5 },
+  { key: 'verifikasi', label: 'Verifikasi Atasan', color: 'yellow', step: 1 },
+  { key: 'penomoran', label: 'Penomoran TU', color: 'blue', step: 2 },
+  { key: 'menunggu_tte', label: 'Menunggu TTE', color: 'purple', step: 3 },
+  { key: 'selesai', label: 'Selesai', color: 'green', step: 4 },
 ]
 
 export const DEFAULT_SIGNER = {
