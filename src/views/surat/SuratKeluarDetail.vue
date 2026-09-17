@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth.js'
@@ -208,7 +208,7 @@ const handlePrint = () => {
       <div class="flex items-center justify-between no-print">
         <div class="flex items-center gap-3">
           <button class="text-gray-400 hover:text-gray-700 bg-white p-2 rounded-full border border-gray-200" @click="router.back()">
-            ←
+            â†
           </button>
           <div class="flex-1">
             <h1 class="text-xl font-bold text-gray-900">
@@ -289,7 +289,7 @@ const handlePrint = () => {
                 <label class="form-label">Kode / Klasifikasi Surat</label>
                 <select v-model="form.kodeSurat" :disabled="!isEditMode" class="form-select">
                   <option v-for="k in mdStore.kodeSurat" :key="k.id" :value="k.singkatan">
-                    {{ k.singkatan }} - {{ k.nama }}
+                    {{ k.singkatan }} - {{ k.label }}
                   </option>
                 </select>
               </div>
@@ -297,7 +297,7 @@ const handlePrint = () => {
               <div>
                 <label class="form-label">Unit Pengirim / KOP</label>
                 <select v-model="form.unitId" :disabled="!isEditMode" class="form-select">
-                  <option v-for="u in mdStore.units" :key="u.id" :value="u.id">{{ u.name }}</option>
+                  <option v-for="u in mdStore.units" :key="u.id" :value="u.id">{{ u.label }}</option>
                 </select>
               </div>
 
