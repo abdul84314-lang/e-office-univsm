@@ -16,9 +16,9 @@ export const useSuratMasukStore = defineStore('suratMasuk', () => {
   async function fetchSuratMasuk() {
     isLoading.value = true
     try {
-      const res = await gasGet('get_surat_masuk')
+      const res = await gasGet('get_documents')
       if (res && res.success) {
-        documents.value = res.documents
+        documents.value = res.documents.filter(d => d.type === 'SuratMasuk' || d.id.startsWith('SM-'))
       }
     } catch (e) {
       console.error('Failed to fetch surat masuk', e)
@@ -37,9 +37,10 @@ export const useSuratMasukStore = defineStore('suratMasuk', () => {
       createdAt: new Date().toISOString(),
       disposisi: null,
       tindakLanjut: null,
+      type: 'SuratMasuk'
     }
     documents.value.push(doc)
-    await gasPost('save_surat_masuk', doc)
+    await gasPost('save_document', doc)
     return doc
   }
 
@@ -51,7 +52,7 @@ export const useSuratMasukStore = defineStore('suratMasuk', () => {
         tanggal: new Date().toISOString()
       }
       doc.status = 'tindak_lanjut'
-      await gasPost('update_surat_masuk', doc)
+      await gasPost('update_document', doc)
     }
   }
 
@@ -64,7 +65,7 @@ export const useSuratMasukStore = defineStore('suratMasuk', () => {
         tanggal: new Date().toISOString()
       }
       doc.status = 'selesai'
-      await gasPost('update_surat_masuk', doc)
+      await gasPost('update_document', doc)
     }
   }
 

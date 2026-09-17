@@ -3,21 +3,22 @@ import { ref, computed } from 'vue'
 import { generateNomorSppd } from '../composables/useNomorSurat.js'
 import { getUnitKode } from '../composables/useKopSurat.js'
 import { gasGet, gasPost } from '../api/gasClient.js'
+import { calculateSppd } from '../data/sppdData.js'
 
 export const useSppdStore = defineStore('sppd', () => {
   const sppdList = ref([])
   const isLoading = ref(false)
 
-  const sortedSppd = computed(() => {
+  const sortedList = computed(() => {
     return [...sppdList.value].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
   })
 
   async function fetchSPPDs() {
     isLoading.value = true
     try {
-      const res = await gasGet('get_sppd')
+      const res = await gasGet('get_documents')
       if (res && res.success) {
-        sppdList.value = res.sppds
+        sppdList.value = res.documents.filter(d => d.type === 'SPPD' || d.isSPPD)
       }
     } catch (e) {
       console.error('Failed to fetch SPPD', e)
@@ -30,16 +31,13 @@ export const useSppdStore = defineStore('sppd', () => {
     const existingIdx = sppdList.value.findIndex(s => s.id === data.id)
     
     if (existingIdx !== -1) {
-      // Update
-      const updated = { ...sppdList.value[existingIdx], ...data }
+      const updated = { ...sppdList.value[existingIdx], ...data, type: 'SPPD' }
       sppdList.value[existingIdx] = updated
-      // We can also have an update_sppd in GAS later if needed, but for now we just save_sppd which appends in the MVP
-      // For a robust system, we would call update_sppd here.
+      await gasPost('update_document', updated)
     } else {
-      // Create new
       const unitKode = getUnitKode(data.unitId || 'rektor')
-      const count = sppdList.value.filter(s => s.unitId === data.unitId && s.sppdNumber).length + 1
-      const sppdNumber = generateNomorSppd({
+      const count = sppdList.value.filter(s => s.unitId === data.unitId && s.nomorSurat).length + 1
+      const nomorSurat = generateNomorSppd({
         noUrut: count,
         unitKode,
         date: new Date()
@@ -48,31 +46,40 @@ export const useSppdStore = defineStore('sppd', () => {
       const newSppd = {
         ...data,
         id: 'SPPD-' + Date.now(),
-        sppdNumber,
+        nomorSurat,
         createdAt: new Date().toISOString(),
         createdBy: author.id,
-        isSPPD: true
+        isSPPD: true,
+        type: 'SPPD'
       }
       
       sppdList.value.push(newSppd)
-      await gasPost('save_sppd', newSppd)
+      await gasPost('save_document', newSppd)
     }
+  }
+  
+  function getCalc(sppd) {
+    return calculateSppd({
+      zoneId: sppd.zoneId,
+      roleKey: sppd.sppdRole,
+      jumlahHari: sppd.jumlahHari,
+      biayaTransport: sppd.biayaTransport,
+      biayaPenginapan: sppd.biayaPenginapan
+    })
   }
 
   function deleteSppd(id) {
     const idx = sppdList.value.findIndex(s => s.id === id)
-    if (idx !== -1) {
-      sppdList.value.splice(idx, 1)
-      // Call GAS delete if API exists
-    }
+    if (idx !== -1) sppdList.value.splice(idx, 1)
   }
 
   return {
     sppdList,
-    sortedSppd,
+    sortedList,
     isLoading,
     fetchSPPDs,
     saveSppd,
-    deleteSppd
+    deleteSppd,
+    getCalc
   }
 })
