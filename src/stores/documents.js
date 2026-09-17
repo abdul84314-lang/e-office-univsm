@@ -172,6 +172,16 @@ export const useDocumentsStore = defineStore('documents', () => {
     return false
   }
 
+  async function deleteDocument(id) {
+    const idx = documents.value.findIndex(d => d.id === id)
+    if (idx !== -1) {
+      documents.value.splice(idx, 1)
+      await gasPost('delete_data', { table: 'Documents', id })
+      return true
+    }
+    return false
+  }
+
   function generateNomorManual(data, author) {
     const systemCount = documents.value.filter(d => d.unitId === data.unitId && d.nomorSurat).length
     const manualCount = agendaManual.value.filter(d => d.unitId === data.unitId).length
@@ -194,19 +204,19 @@ export const useDocumentsStore = defineStore('documents', () => {
     return record
   }
 
-  async function updateAgenda(recordId, data) {
-    const doc = agendaManual.value.find(d => d.id === recordId)
-    if (doc) {
-      Object.assign(doc, data)
-      await gasPost('update_document', doc)
+  async function updateAgenda(id, updates) {
+    const idx = agendaManual.value.findIndex(d => d.id === id)
+    if (idx !== -1) {
+      agendaManual.value[idx] = { ...agendaManual.value[idx], ...updates }
+      await gasPost('update_data', { table: 'AgendaManual', record: agendaManual.value[idx] })
     }
   }
 
-  async function deleteAgenda(recordId) {
-    const idx = agendaManual.value.findIndex(d => d.id === recordId)
+  async function deleteAgenda(id) {
+    const idx = agendaManual.value.findIndex(d => d.id === id)
     if (idx !== -1) {
       agendaManual.value.splice(idx, 1)
-      await gasPost('delete_document', { id: recordId })
+      await gasPost('delete_data', { table: 'AgendaManual', id })
     }
   }
 
@@ -215,6 +225,6 @@ export const useDocumentsStore = defineStore('documents', () => {
     totalDocuments, pendingApprovals, sortedDocuments, sortedAgenda,
     fetchDocuments, getStatusInfo, getNextStatus, getPrevStatus,
     createDocument, advanceStatus, signDocument, rejectDocument,
-    updateDocument, generateNomorManual, updateAgenda, deleteAgenda
+    updateDocument, deleteDocument, generateNomorManual, updateAgenda, deleteAgenda
   }
 })

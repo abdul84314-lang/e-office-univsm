@@ -1,4 +1,4 @@
-﻿import { defineStore } from 'pinia'
+import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { gasGet, gasPost } from '../api/gasClient.js'
 
@@ -69,6 +69,16 @@ export const useSuratMasukStore = defineStore('suratMasuk', () => {
     }
   }
 
+  async function deleteSuratMasuk(id) {
+    const idx = documents.value.findIndex(d => d.id === id)
+    if (idx !== -1) {
+      documents.value.splice(idx, 1)
+      await gasPost('delete_data', { table: 'Documents', id })
+      return true
+    }
+    return false
+  }
+
   const sortedDocuments = computed(() =>
     [...documents.value].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
   )
@@ -82,6 +92,7 @@ export const useSuratMasukStore = defineStore('suratMasuk', () => {
     fetchSuratMasuk,
     createSuratMasuk,
     addDisposisi,
-    selesaikanSurat
+    selesaikanSurat,
+    deleteSuratMasuk
   }
 })

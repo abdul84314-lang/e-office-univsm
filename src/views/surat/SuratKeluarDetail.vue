@@ -138,6 +138,28 @@ const saveNomor = async () => {
   }
 }
 
+const isUploadingBasah = ref(false)
+const handleUploadBasah = (e) => {
+  const file = e.target.files[0]
+  if (!file) return
+  isUploadingBasah.value = true
+  const reader = new FileReader()
+  reader.onload = async (ev) => {
+    const b64 = ev.target.result.split(',')[1]
+    const success = await docStore.updateDocument(doc.value.id, { fileBase64: b64, fileMime: file.type })
+    if (success) alert('Dokumen final (TTD Basah) berhasil diunggah ke Arsip Drive!')
+    isUploadingBasah.value = false
+  }
+  reader.readAsDataURL(file)
+}
+
+const deleteDoc = async () => {
+  if (confirm('Yakin ingin menghapus surat ini?')) {
+    await docStore.deleteDocument(doc.value.id)
+    router.push('/surat-keluar')
+  }
+}
+
 const saveDoc = async () => {
   if (!form.value.judul) return alert('Judul harus diisi!')
   if (!form.value.penandatanganId) return alert('Penandatangan harus dipilih!')
@@ -361,7 +383,10 @@ const handlePrint = () => {
               </div>
             </div>
 
-            <div class="flex justify-end pt-4" v-if="isEditMode">
+            <div class="flex justify-end pt-4 gap-2" v-if="isEditMode">
+              <button v-if="!isCreateRoute && (isAdmin || isPembuat)" class="btn-danger" @click="deleteDoc">
+                Hapus Surat
+              </button>
               <button class="btn-primary" @click="saveDoc">
                 {{ isCreateRoute ? 'Buat Draft Surat' : 'Simpan Perubahan' }}
               </button>
@@ -402,6 +427,14 @@ const handlePrint = () => {
                   <button class="btn-danger btn-sm w-full mt-3" v-if="doc.status !== 'draft'" @click="showRejectModal = true">
                     Tolak / Kembalikan ke Draft
                   </button>
+                </div>
+              </div>
+              <div v-else-if="doc.tte?.method === 'basah' && (isAdmin || auth.currentUser?.role === 'tu')">
+                <div class="border-t border-gray-100 pt-4 mt-4">
+                  <p class="text-sm font-semibold text-gray-700 mb-2">Upload File TTD Basah (Final)</p>
+                  <p class="text-xs text-gray-500 mb-3">Surat ini disahkan manual. Silakan unggah hasil scan PDF finalnya ke sistem Arsip Drive.</p>
+                  <input type="file" accept="application/pdf" @change="handleUploadBasah" class="form-input text-xs" :disabled="isUploadingBasah" />
+                  <p v-if="isUploadingBasah" class="text-xs text-blue-600 mt-1">Sedang mengunggah ke Google Drive...</p>
                 </div>
               </div>
             </div>

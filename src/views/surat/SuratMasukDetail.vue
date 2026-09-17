@@ -77,13 +77,21 @@ function submitSelesai() {
   smStore.selesaikanSurat(doc.value.id, selesaiNote.value, auth.currentUser.id)
   showSelesaiModal.value = false
 }
+
+function deleteDoc() {
+  if (confirm('Apakah Anda yakin ingin menghapus surat masuk ini?')) {
+    smStore.deleteSuratMasuk(doc.value.id)
+    router.push('/surat-masuk')
+  }
+}
 </script>
 
 <template>
   <div class="space-y-5 max-w-4xl mx-auto">
     <!-- Header -->
     <div class="flex items-center gap-4">
-      <button class="btn-secondary btn-sm" @click="router.back()">← Kembali</button>
+      <button class="btn-secondary btn-sm" @click="router.back()">Kembali</button>
+      <button v-if="!isCreateRoute && isAdmin" class="btn-danger btn-sm" @click="deleteDoc">Hapus Surat</button>
       <div class="flex-1">
         <h1 class="text-xl font-bold text-gray-900">
           {{ isCreateRoute ? 'Registrasi Surat Masuk Baru' : 'Detail Surat Masuk' }}
