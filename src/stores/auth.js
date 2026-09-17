@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { gasPost } from '../api/gasClient.js'
 
 const INITIAL_USERS = [
-  { id: 99, name: 'Super Admin', nik: '9999999999999999', jabatan: 'Administrator Sistem', sppdRole: 'staf', unitId: 'rektor', email: 'admin@univsm.ac.id', phone: '081234567890', avatar: 'SA', role: 'admin', password: 'admin' },
+  { id: 99, name: 'Super Admin', nik: '9999999999999999', jabatan: 'Administrator Sistem', sppdRole: 'staf', unitId: 'rektor', email: 'admin@univsm.ac.id', phone: '081234567890', avatar: 'SA', role: 'super_admin', password: 'admin' },
   { id: 1, name: 'Abdul Hamid, S.Kom., M.M., M.Kom.', nik: '3501010101850001', nidn: '1101018501', jabatan: 'Rektor', sppdRole: 'rektor', unitId: 'rektor', email: 'rektor@univsm.ac.id', phone: '081200000001', avatar: 'AH', role: 'user', password: 'password' },
   { id: 2, name: 'Dr. Siti Rahmah, M.Pd.', nik: '3501010101820002', nidn: '1102028201', jabatan: 'Wakil Rektor I', sppdRole: 'warek', unitId: 'rektor', email: 'wr1@univsm.ac.id', phone: '081200000002', avatar: 'SR', role: 'user', password: 'password' },
   { id: 3, name: 'Ir. Budi Santoso, M.T.', nik: '3501010101780003', nidn: '1103037801', jabatan: 'Wakil Rektor II', sppdRole: 'warek', unitId: 'rektor', email: 'wr2@univsm.ac.id', phone: '081200000003', avatar: 'BS', role: 'user', password: 'password' },
@@ -61,11 +61,7 @@ export const useAuthStore = defineStore('auth', () => {
     const saved = localStorage.getItem('eoffice_user')
     if (saved) {
       try { 
-        const parsed = JSON.parse(saved)
-        // Refresh with latest data from users ref in case it was updated
-        const freshUser = users.value.find(u => u.id === parsed.id)
-        if (freshUser) currentUser.value = freshUser
-        else currentUser.value = parsed
+        currentUser.value = JSON.parse(saved)
       } catch {}
     }
   }
