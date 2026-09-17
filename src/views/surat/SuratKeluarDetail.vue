@@ -290,6 +290,7 @@ const handlePrint = () => {
         <div class="flex items-center gap-3">
           <button class="text-gray-400 hover:text-gray-700 bg-white p-2 rounded-full border border-gray-200" @click="router.back()">
             â†
+            â† 
           </button>
           <div class="flex-1">
             <h1 class="text-xl font-bold text-gray-900">
@@ -298,12 +299,12 @@ const handlePrint = () => {
             <p v-if="!isCreateRoute && doc" class="text-sm text-gray-500 mt-0.5 font-mono">
               <span v-if="!isEditingNomor">{{ doc.nomorSurat ?? doc.id }}</span>
               <div v-else class="flex items-center gap-2 mt-1">
-                <input v-model="manualNomor" type="text" class="form-input text-xs py-1 px-2 h-7 w-48" placeholder="Kosongkan u/ hapus" />
+                <input v-model="manualNomor" type="text" class="form-input text-xs py-1 px-2 h-7 w-48" placeholder="Format: 001/ST/REK/IX/2026" />
                 <button @click="saveNomor" class="btn-primary text-xs py-1 px-2 h-7">Simpan</button>
                 <button @click="isEditingNomor = false" class="btn-secondary text-xs py-1 px-2 h-7">Batal</button>
               </div>
-              <button v-if="!isEditingNomor && doc.nomorSurat && (isAdmin || auth.currentUser?.role === 'tu')" @click="startEditNomor" class="text-xs text-blue-600 hover:underline">
-                [Edit / Hapus Nomor]
+              <button v-if="!isEditingNomor && (isAdmin || auth.currentUser?.role === 'tu')" @click="startEditNomor" class="text-xs text-blue-600 hover:underline ml-2">
+                [Set / Edit Nomor Manual]
               </button>
             </p>
           </div>
