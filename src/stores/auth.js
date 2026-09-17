@@ -15,7 +15,7 @@ const INITIAL_USERS = [
 ]
 
 export const useAuthStore = defineStore('auth', () => {
-  const users = ref([...INITIAL_USERS])
+  const users = ref([])
   const currentUser = ref(null)
   
   const isAuthenticated = computed(() => currentUser.value !== null)

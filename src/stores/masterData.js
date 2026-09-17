@@ -4,8 +4,8 @@ import { getAllUnits as getSeedUnits, KODE_SURAT_LIST as getSeedKodeSurat } from
 import { gasGet, gasPost } from '../api/gasClient.js'
 
 export const useMasterDataStore = defineStore('masterData', () => {
-  const units = ref([...getSeedUnits()])
-  const kodeSurat = ref([...getSeedKodeSurat])
+  const units = ref([])
+  const kodeSurat = ref([])
 
   const isFetching = ref(false)
 
