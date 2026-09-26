@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+﻿import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { gasPost } from '../api/gasClient.js'
 
@@ -15,7 +15,7 @@ const INITIAL_USERS = [
 ]
 
 export const useAuthStore = defineStore('auth', () => {
-  const users = ref([])
+  const users = ref([...INITIAL_USERS])
   const currentUser = ref(null)
   
   const isAuthenticated = computed(() => currentUser.value !== null)

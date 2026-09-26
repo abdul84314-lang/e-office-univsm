@@ -1,7 +1,8 @@
-<script setup>
+﻿<script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSppdStore } from '../../stores/sppd.js'
+import { useAuthStore } from '../../stores/auth.js'
 import { SPPD_ZONES, formatRp } from '../../data/sppdData.js'
 import DocumentKop from '../../components/common/DocumentKop.vue'
 
@@ -11,9 +12,26 @@ const props = defineProps({
 
 const router = useRouter()
 const sppdStore = useSppdStore()
+const auth = useAuthStore()
 
 const sppd = computed(() => sppdStore.sppdList.find(s => s.id === props.id))
 const calc = computed(() => sppd.value ? sppdStore.getCalc(sppd.value) : null)
+
+const canApprove = computed(() => {
+  return auth.isAdmin || auth.currentUser?.role === 'admin' || auth.currentUser?.sppdRole === 'rektor'
+})
+
+async function approveSppd() {
+  if (confirm('Setujui pengajuan SPPD ini?')) {
+    await sppdStore.saveSppd({ ...sppd.value, status: 'approved' }, auth.currentUser)
+  }
+}
+
+async function rejectSppd() {
+  if (confirm('Tolak pengajuan SPPD ini?')) {
+    await sppdStore.saveSppd({ ...sppd.value, status: 'rejected' }, auth.currentUser)
+  }
+}
 
 function getZoneLabel(zoneId) {
   return SPPD_ZONES.find(z => z.id === zoneId)?.label ?? zoneId
@@ -47,12 +65,12 @@ const pejabatBerwenang = computed(() => {
   <div class="space-y-5 max-w-4xl mx-auto print:max-w-none print:w-full print:m-0 print:space-y-0">
     <!-- Header / Actions (No Print) -->
     <div class="flex items-center gap-4 print:hidden">
-      <button class="btn-secondary btn-sm" @click="router.back()">â† Kembali</button>
+      <button class="btn-secondary btn-sm" @click="router.back()">Kembali</button>
       <div class="flex-1">
         <h1 class="text-xl font-bold text-gray-900">Detail SPPD</h1>
         <p class="text-sm text-gray-500 mt-0.5 font-mono">{{ sppd?.nomorSurat ?? props.id }}</p>
       </div>
-      <button class="btn-primary btn-sm" @click="handlePrint">ðŸ–¨ï¸ Cetak SPPD</button>
+      <button class="btn-primary btn-sm" @click="handlePrint">Cetak SPPD</button>
     </div>
 
     <div v-if="sppd && calc" class="card print:shadow-none print:border-0 bg-white">
@@ -272,7 +290,7 @@ const pejabatBerwenang = computed(() => {
     <!-- 404 Error -->
     <div v-else class="card text-center py-12 text-gray-400">
       SPPD tidak ditemukan.
-      <RouterLink to="/sppd" class="block mt-2 text-primary-700 hover:underline text-sm">â† Kembali ke daftar SPPD</RouterLink>
+      <RouterLink to="/sppd" class="block mt-2 text-primary-700 hover:underline text-sm">Kembali ke daftar SPPD</RouterLink>
     </div>
   </div>
 </template>
