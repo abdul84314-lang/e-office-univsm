@@ -33,7 +33,7 @@ export const useSppdStore = defineStore('sppd', () => {
     if (existingIdx !== -1) {
       const updated = { ...sppdList.value[existingIdx], ...data, type: 'SPPD' }
       sppdList.value[existingIdx] = updated
-      await gasPost('update_document', updated)
+      gasPost('update_document', updated).catch(console.error) // Optimistic
     } else {
       const unitKode = getUnitKode(data.unitId || 'rektor')
       const count = sppdList.value.filter(s => s.unitId === data.unitId && s.nomorSurat).length + 1
@@ -54,7 +54,7 @@ export const useSppdStore = defineStore('sppd', () => {
       }
       
       sppdList.value.push(newSppd)
-      await gasPost('save_document', newSppd)
+      gasPost('save_document', newSppd).catch(console.error) // Optimistic
     }
   }
   
@@ -73,7 +73,7 @@ export const useSppdStore = defineStore('sppd', () => {
     const idx = sppdList.value.findIndex(s => s.id === id)
     if (idx !== -1) {
       sppdList.value.splice(idx, 1)
-      await gasPost('delete_data', { table: 'SPPD', id })
+      gasPost('delete_data', { table: 'SPPD', id }).catch(console.error) // Optimistic
     }
   }
 

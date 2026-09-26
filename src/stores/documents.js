@@ -74,16 +74,17 @@ export const useDocumentsStore = defineStore('documents', () => {
       tte: null,
     }
     
-    // Call GAS first before updating local state
-    const res = await gasPost('save_document', doc)
-    if (!res || !res.success) {
-      alert('Gagal menyimpan dokumen ke database! Error: ' + (res?.error || 'Koneksi terputus/File terlalu besar'))
-      console.error(res)
-      return null
-    }
-    
-    // Only push if backend save was successful
+    // ?? Optimasi: Instantly add to local state for < 1s lead time
     documents.value.push(doc)
+    
+    // Background sync
+    gasPost('save_document', doc).then(res => {
+      if (res && res.success && res.document) {
+        // Update local with driveFileId and URL if generated
+        Object.assign(doc, res.document)
+      }
+    }).catch(console.error)
+    
     return doc
   }
 
@@ -111,7 +112,7 @@ export const useDocumentsStore = defineStore('documents', () => {
       }
     }
 
-    await gasPost('update_document', doc)
+    gasPost('update_document', doc).catch(console.error) // Optimistic
   }
 
   async function signDocument(docId, author, signerUser, extraData = {}) {
@@ -137,7 +138,7 @@ export const useDocumentsStore = defineStore('documents', () => {
       }
     }
 
-    await gasPost('update_document', doc)
+    gasPost('update_document', doc).catch(console.error) // Optimistic
   }
 
   async function rejectDocument(docId, reason, authorName) {
@@ -145,7 +146,7 @@ export const useDocumentsStore = defineStore('documents', () => {
     if (!doc) return
     doc.status = 'draft'
     doc.statusHistory.push({ status: 'draft', at: new Date().toISOString(), by: authorName, note: reason })
-    await gasPost('update_document', doc)
+    gasPost('update_document', doc).catch(console.error) // Optimistic
   }
 
   async function updateDocument(id, updates) {
@@ -175,7 +176,7 @@ export const useDocumentsStore = defineStore('documents', () => {
     const idx = documents.value.findIndex(d => d.id === id)
     if (idx !== -1) {
       documents.value.splice(idx, 1)
-      await gasPost('delete_data', { table: 'Documents', id })
+      gasPost('delete_data', { table: 'Documents', id }).catch(console.error) // Optimistic
       return true
     }
     return false

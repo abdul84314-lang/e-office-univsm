@@ -26,27 +26,25 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Login backend GAS
   async function loginWithCredentials(email, password) {
+    // ?? Optimasi: Cek data di memory (Pinia) agar login instan (< 1 detik)
+    const localUser = users.value.find(u => u.email === email && u.password === password)
+    if (localUser) {
+      currentUser.value = localUser
+      localStorage.setItem('eoffice_user', JSON.stringify(localUser))
+      return true
+    }
+
     try {
       console.log('Mencoba login via API GAS...')
       const res = await gasPost('login', { email, password })
       
       if (res && res.success && res.user) {
-        // Berhasil login dari Google Sheet
         currentUser.value = res.user
         localStorage.setItem('eoffice_user', JSON.stringify(res.user))
         return true
       }
     } catch (e) {
-      console.warn('Login GAS gagal/timeout, mencoba fallback lokal...', e)
-    }
-
-    // FALLBACK LOKAL: Jika spreadsheet masih kosong atau belum disiapkan, gunakan data statis
-    console.log('Menggunakan autentikasi lokal (Fallback)...')
-    const user = users.value.find(u => u.email === email && u.password === password)
-    if (user) {
-      currentUser.value = user
-      localStorage.setItem('eoffice_user', JSON.stringify(user))
-      return true
+      console.warn('Login GAS gagal/timeout', e)
     }
     
     return false

@@ -40,7 +40,7 @@ export const useSuratMasukStore = defineStore('suratMasuk', () => {
       type: 'SuratMasuk'
     }
     documents.value.push(doc)
-    await gasPost('save_document', doc)
+    gasPost('save_document', doc).catch(console.error)
     return doc
   }
 
@@ -52,7 +52,7 @@ export const useSuratMasukStore = defineStore('suratMasuk', () => {
         tanggal: new Date().toISOString()
       }
       doc.status = 'tindak_lanjut'
-      await gasPost('update_document', doc)
+      gasPost('update_document', doc).catch(console.error)
     }
   }
 
@@ -65,7 +65,7 @@ export const useSuratMasukStore = defineStore('suratMasuk', () => {
         tanggal: new Date().toISOString()
       }
       doc.status = 'selesai'
-      await gasPost('update_document', doc)
+      gasPost('update_document', doc).catch(console.error)
     }
   }
 
@@ -73,7 +73,7 @@ export const useSuratMasukStore = defineStore('suratMasuk', () => {
     const idx = documents.value.findIndex(d => d.id === id)
     if (idx !== -1) {
       documents.value.splice(idx, 1)
-      await gasPost('delete_data', { table: 'Documents', id })
+      gasPost('delete_data', { table: 'Documents', id }).catch(console.error)
       return true
     }
     return false
@@ -83,7 +83,7 @@ export const useSuratMasukStore = defineStore('suratMasuk', () => {
     const idx = documents.value.findIndex(d => d.id === id)
     if (idx !== -1) {
       documents.value[idx] = { ...documents.value[idx], ...payload }
-      await gasPost('save_document', documents.value[idx])
+      gasPost('save_document', documents.value[idx]).catch(console.error)
       return documents.value[idx]
     }
     return null
