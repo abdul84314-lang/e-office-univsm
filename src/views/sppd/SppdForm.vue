@@ -34,6 +34,8 @@ const form = ref({
   jumlahHari:     1,
   biayaTransport: 0,
   biayaPenginapan:0,
+  tanggalBerangkat: '',
+  tanggalKembali:   '',
 })
 
 watch(sppdToEdit, (val) => {
@@ -47,9 +49,6 @@ watch(sppdToEdit, (val) => {
     }
   }
 }, { immediate: true })
-  tanggalBerangkat: '',
-  tanggalKembali:   '',
-})
 
 const addTraveler = () => {
   form.value.travelers.push({ nama: '', nip: '', jabatan: '', sppdRole: 'staf' })
