@@ -37,7 +37,7 @@ export const useSppdStore = defineStore('sppd', () => {
     } else {
       const unitKode = getUnitKode(data.unitId || 'rektor')
       const count = sppdList.value.filter(s => s.unitId === data.unitId && s.nomorSurat).length + 1
-      const nomorSurat = generateNomorSppd({
+      const nomorSurat = data.nomorSurat || generateNomorSppd({
         noUrut: count,
         unitKode,
         date: new Date()

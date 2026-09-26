@@ -69,6 +69,12 @@ const routes = [
         component: () => import('../views/sppd/SppdForm.vue'),
       },
       {
+        path: 'sppd/:id/edit',
+        name: 'SppdEdit',
+        component: () => import('../views/sppd/SppdForm.vue'),
+        props: true,
+      },
+      {
         path: 'sppd/:id',
         name: 'SppdDetail',
         component: () => import('../views/sppd/SppdDetail.vue'),

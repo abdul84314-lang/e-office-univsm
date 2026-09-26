@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth.js'
@@ -7,6 +7,7 @@ import { SPPD_ZONES, SPPD_MATRIX, calculateSppd, formatRp, getPenginapanMax } fr
 import { JABATAN_ROLES, getAllUnits } from '../../data/orgData.js'
 import DocumentKop from '../../components/common/DocumentKop.vue'
 
+const props = defineProps({ id: String })
 const router = useRouter()
 const authStore = useAuthStore()
 const sppdStore = useSppdStore()
@@ -14,7 +15,12 @@ const sppdStore = useSppdStore()
 const auth = authStore
 const allUnits = getAllUnits()
 
+const isEditRoute = computed(() => !!props.id)
+const sppdToEdit = computed(() => isEditRoute.value ? sppdStore.sppdList.find(s => s.id === props.id) : null)
+
 const form = ref({
+  id:             '',
+  nomorSurat:     '',
   travelers: [{
     nama:           auth.currentUser?.name ?? '',
     nip:            auth.currentUser?.nip ?? '',
@@ -28,6 +34,19 @@ const form = ref({
   jumlahHari:     1,
   biayaTransport: 0,
   biayaPenginapan:0,
+})
+
+watch(sppdToEdit, (val) => {
+  if (val) {
+    form.value = {
+      ...val,
+      // clone travelers to prevent direct mutation
+      travelers: val.travelers ? JSON.parse(JSON.stringify(val.travelers)) : [{
+        nama: val.nama, nip: val.nip, jabatan: val.jabatan, sppdRole: val.sppdRole
+      }]
+    }
+  }
+}, { immediate: true })
   tanggalBerangkat: '',
   tanggalKembali:   '',
 })
@@ -66,7 +85,7 @@ const handleSubmit = async () => {
   try {
     await sppdStore.saveSppd({
       ...form.value,
-      status: 'draft',
+      status: isEditRoute.value ? (sppdToEdit.value?.status || 'draft') : 'draft',
       // Store the legacy fields from traveler 1 for compatibility if needed
       nama: form.value.travelers[0].nama,
       nip: form.value.travelers[0].nip,
@@ -92,7 +111,7 @@ const handleSubmit = async () => {
         </svg>
       </button>
       <div>
-        <h1 class="text-xl font-bold text-gray-900">Buat SPPD Baru</h1>
+        <h1 class="text-xl font-bold text-gray-900">{{ isEditRoute ? "Edit SPPD" : "Buat SPPD Baru" }}</h1>
         <p class="text-sm text-gray-500 mt-0.5">Pengajuan Surat Perintah Perjalanan Dinas</p>
       </div>
     </div>
@@ -133,7 +152,7 @@ const handleSubmit = async () => {
           <button @click="addTraveler" class="btn-secondary btn-sm mb-4">+ Tambah Pelaksana (Pengikut)</button>
 
           <div>
-            <label class="form-label">Unit / Prodi Pengaju</label>
+            <label class="form-label">Nomor SPPD (Manual)</label><input v-model="form.nomorSurat" type="text" class="form-input mb-4" placeholder="Ketik manual nomor SPPD..." /><label class="form-label">Unit / Prodi Pengaju</label>
             <select v-model="form.unitId" class="form-select">
               <option v-for="u in allUnits" :key="u.id" :value="u.id">
                 [{{ u.kode }}] {{ u.label }}
@@ -219,7 +238,7 @@ const handleSubmit = async () => {
 
         <div class="flex justify-end gap-3">
           <button class="btn-secondary" @click="router.back()">Batal</button>
-          <button class="btn-primary" @click="handleSubmit" :disabled="isSubmitting">Ajukan SPPD</button>
+          <button class="btn-primary" @click="handleSubmit" :disabled="isSubmitting">{{ isEditRoute ? "Simpan Perubahan SPPD" : "Ajukan SPPD" }}</button>
         </div>
       </div>
 
