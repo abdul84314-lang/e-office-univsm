@@ -55,7 +55,7 @@ const pejabatBerwenang = computed(() => {
     return {
       nama: 'Abdul Hamid, S.Kom., M.M., M.Kom.',
       jabatan: 'Rektor',
-      nik: '3501010101850001'
+      nik: '711018210693'
     }
   }
 })
