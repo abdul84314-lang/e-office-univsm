@@ -176,7 +176,7 @@ function handlePrint() {
               <label class="form-label">Pilih Nama Penerima Disposisi</label>
               <select
                 class="form-select text-sm"
-                @change="if ($event.target.value) pelaporNama = $event.target.value"
+                @change="pelaporNama = $event.target.value || pelaporNama"
               >
                 <option value="">-- Pilih dari daftar tujuan --</option>
                 <option v-for="opt in recipientOptions" :key="opt" :value="opt">{{ opt }}</option>

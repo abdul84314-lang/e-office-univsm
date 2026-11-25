@@ -1,0 +1,200 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8" />
+<title>Buku Panduan E-Office UNIVSM v2.0</title>
+<style>
+  @page { size: A4; margin: 2.2cm 2cm; }
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.5; color: #1f2937; }
+  .cover { text-align: center; border-bottom: 3px double #1e3a8a; padding-bottom: 16px; margin-bottom: 20px; }
+  .cover .yayasan { font-size: 10pt; letter-spacing: 1px; color: #4b5563; text-transform: uppercase; }
+  .cover h1 { font-size: 18pt; color: #1e3a8a; margin: 6px 0 4px; text-transform: uppercase; }
+  .cover .sub { font-size: 12pt; font-weight: bold; color: #111827; margin: 0; }
+  .cover .meta { font-size: 9.5pt; color: #6b7280; margin-top: 6px; }
+  h2 { font-size: 13.5pt; color: #1e3a8a; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 4px; margin-top: 22px; margin-bottom: 10px; page-break-after: avoid; }
+  h3 { font-size: 11.5pt; color: #0f172a; margin-top: 14px; margin-bottom: 6px; page-break-after: avoid; }
+  p { margin: 6px 0; text-align: justify; }
+  ul, ol { margin: 6px 0 10px 20px; padding: 0; }
+  li { margin-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: 10pt; }
+  th { background-color: #1e3a8a; color: #ffffff; text-align: left; padding: 7px 9px; border: 1px solid #1e3a8a; }
+  td { padding: 7px 9px; border: 1px solid #cbd5e1; vertical-align: top; }
+  tr:nth-child(even) td { background-color: #f8fafc; }
+  .callout { background-color: #eff6ff; border-left: 4px solid #1e3a8a; padding: 10px 12px; margin: 10px 0; font-size: 10pt; }
+  .callout-green { background-color: #ecfdf5; border-left: 4px solid #059669; padding: 10px 12px; margin: 10px 0; font-size: 10pt; }
+  .flow { background-color: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 12px; font-weight: bold; color: #0f172a; text-align: center; margin: 8px 0 12px; font-size: 10pt; }
+  code { font-family: Consolas, monospace; font-size: 9.5pt; background-color: #f3f4f6; padding: 1px 4px; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="yayasan">Yayasan Sapta Bakti Pendidikan</div>
+  <h1>UNIVERSITAS SAPTA MANDIRI</h1>
+  <p class="sub">BUKU PANDUAN PENGGUNA APLIKASI E-OFFICE UNIVSM (EDISI v2.0)</p>
+  <p class="meta">Standar Operasional Prosedur (SOP) Persuratan, Lembar Disposisi Digital, Akses Tanpa Login, Notifikasi Email/WA, TTE BSrE &amp; SPPD</p>
+</div>
+
+<h2>1. Pendahuluan &amp; Ringkasan Pembaruan Terbaru (v2.0)</h2>
+<p>Aplikasi <strong>E-Office Universitas Sapta Mandiri (UNIVSM)</strong> merupakan sistem administrasi persuratan digital terpadu yang terhubung dengan Google Sheets, Google Drive Archive, Notifikasi Email Otomatis (Google Apps Script v7), WhatsApp Gateway (Fonnte / Mode Hybrid), serta dukungan Tanda Tangan Elektronik (TTE Barcode / BSrE BSSN).</p>
+<ul>
+  <li><strong>Performa Instan (&lt; 1 Detik):</strong> Login cepat dari memori lokal serta pembaruan antarmuka instan (<em>Optimistic UI</em>) tanpa menunggu respon server yang lama.</li>
+  <li><strong>Lembar Disposisi Resmi UNIVSM (Tanpa File):</strong> Tampilan identik dengan format resmi UNIVSM lengkap dengan KOP &amp; Logo, multi-penerima, <em>checkbox</em> "Dengan Hormat Harap", catatan, serta <strong>Paraf Digital tanpa upload file</strong>.</li>
+  <li><strong>Akses Penerima Tanpa Login:</strong> Penerima disposisi maupun penerima surat keluar resmi cukup mengklik tautan ber-token dari Email/WA untuk membaca dokumen, melihat PDF, memverifikasi QR TTE, hingga melaporkan <strong>Tindak Lanjut Selesai tanpa harus login</strong>.</li>
+  <li><strong>Notifikasi Langsung Email &amp; WhatsApp:</strong> Pengiriman informasi surat dan Lembar Disposisi berformat tabel HTML resmi (dengan Logo UNIVSM) langsung ke Email &amp; WA penerima tanpa perlu unduh/cetak PDF manual.</li>
+  <li><strong>TTE BSrE Fleksibel (3 Opsi):</strong> Mendukung TTE Barcode QR / API BSrE, metode <strong>Unduh PDF &rarr; TTD BSrE Digital &rarr; Unggah Final</strong>, serta TTD Basah.</li>
+  <li><strong>SPPD Lengkap:</strong> Mendukung penomoran manual, aksi lengkap (Lihat, Edit, Hapus), NIK resmi penandatangan, serta tombol persetujuan (Setujui/Tolak) bagi Rektor &amp; Admin.</li>
+</ul>
+
+<h2>2. Hak Akses Pengguna (RBAC)</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width:24%;">Peran (Role)</th>
+      <th>Hak Akses &amp; Kewenangan Utama</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Super Admin</strong></td>
+      <td>Akses penuh (<strong>All CRUD</strong>) pada seluruh modul: membuat, melihat, mengedit, dan menghapus Surat Masuk, Surat Keluar, SPPD, Manajemen User, Manajemen Unit, Jenis Surat, dan <strong>Notifikasi &amp; BSrE</strong>.</td>
+    </tr>
+    <tr>
+      <td><strong>Admin (Tata Usaha / TU)</strong></td>
+      <td>Registrasi Surat Masuk, verifikasi &amp; penomoran Surat Keluar (otomatis/manual), pengelolaan Buku Agenda, unggah scan TTD Basah, serta persetujuan/pengelolaan SPPD.</td>
+    </tr>
+    <tr>
+      <td><strong>Pimpinan (Rektor / Warek / Dekan)</strong></td>
+      <td>Memiliki <strong>Panel Pimpinan</strong> terpisah (<em>Butuh Verifikasi</em>, <em>Butuh Pengesahan / TTE</em>, dan <em>Disposisi Masuk</em>); membuat Lembar Disposisi Digital; menyetujui/menolak SPPD.</td>
+    </tr>
+    <tr>
+      <td><strong>User Biasa (Staf / Dosen)</strong></td>
+      <td>Membuat draft Surat Keluar, mengajukan/mengedit SPPD miliknya, serta menindaklanjuti disposisi.</td>
+    </tr>
+    <tr>
+      <td><strong>Penerima Tautan Publik (Tanpa Login)</strong></td>
+      <td>Membuka Lembar Disposisi &amp; lampiran surat melalui tautan khusus dari Email/WA, melaporkan Tindak Lanjut Selesai, serta memverifikasi &amp; mengunduh Surat Keluar Resmi / scan QR TTE tanpa akun login.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>3. Modul Surat Masuk &amp; Lembar Disposisi Digital</h2>
+<div class="flow">Registrasi TU &nbsp;&rarr;&nbsp; Menunggu Disposisi &nbsp;&rarr;&nbsp; Tindak Lanjut &nbsp;&rarr;&nbsp; Selesai / Arsip</div>
+
+<h3>3.1. Registrasi Surat Masuk (Admin TU / Super Admin)</h3>
+<ol>
+  <li>Buka menu <strong>Surat Masuk</strong> &rarr; klik <strong>Register Surat Masuk</strong>.</li>
+  <li>Isi data surat: <strong>Surat Dari</strong>, <strong>Nomor Surat Asal</strong>, <strong>Tanggal Surat</strong>, <strong>Diterima Tanggal</strong>, <strong>Nomor Agenda</strong> (terisi otomatis dan dapat diubah manual), serta pilih <strong>Sifat Surat</strong> (<em>Sangat Segera / Segera / Rahasia</em>).</li>
+  <li>Pilih <strong>Tujuan Pimpinan</strong> yang akan mendisposisikan, unggah <strong>File Surat Masuk (PDF)</strong>, dan isi <strong>Perihal</strong>.</li>
+  <li>Pastikan opsi <em>"Kirim notifikasi otomatis ke Email &amp; WA Pimpinan"</em> aktif, lalu klik <strong>Simpan &amp; Registrasi Surat Masuk</strong>.</li>
+</ol>
+
+<h3>3.2. Membuat Lembar Disposisi Digital (Pimpinan / Admin)</h3>
+<ol>
+  <li>Buka surat masuk berstatus <em>Menunggu Disposisi</em> (melalui <strong>Panel Pimpinan &rarr; Disposisi Masuk</strong> atau link di Email/WA).</li>
+  <li>Klik <strong>Buat Lembar Disposisi</strong>.</li>
+  <li>Lengkapi formulir sesuai standar UNIVSM:
+    <ul>
+      <li><strong>Sifat Surat:</strong> sesuaikan tingkat urgensi bila diperlukan.</li>
+      <li><strong>Diteruskan Kepada (Multi-Penerima):</strong> centang satu atau lebih pejabat/staf dari daftar user, atau tambahkan pihak lain melalui kotak <em>Tambah Penerima Tambahan</em> (misal: Ketua LPPM, Sekretariat, Ybs).</li>
+      <li><strong>Dengan Hormat Harap:</strong> centang instruksi (<em>Tanggapan dan Saran</em>, <em>Proses Lebih Lanjut</em>, <em>Koordinasi / Konfirmasikan</em>) dan/atau isi 2 baris instruksi tambahan.</li>
+      <li><strong>Catatan Pimpinan:</strong> tulis arahan terperinci bernomor.</li>
+      <li><strong>Paraf Pimpinan (Tanpa File):</strong> pilih <strong>Coret Paraf Langsung</strong> di layar (bisa dicentang <em>"Simpan sebagai paraf default saya"</em>) atau pilih <strong>Paraf Elektronik Otomatis</strong> tanpa coret.</li>
+    </ul>
+  </li>
+  <li>Pastikan centang <em>"Langsung teruskan via Email &amp; WhatsApp"</em> aktif &rarr; klik <strong>Simpan &amp; Teruskan Disposisi</strong>.</li>
+  <li>Sistem langsung menampilkan <strong>Lembar Disposisi Resmi UNIVSM</strong> serta mengirimkannya ke Email (format tabel resmi ber-Logo UNIVSM) dan WhatsApp seluruh penerima tujuan.</li>
+</ol>
+
+<h3>3.3. Akses &amp; Laporan Tindak Lanjut Disposisi Tanpa Login</h3>
+<div class="callout-green">
+  <strong>Tanpa Perlu Login &amp; Tanpa Download PDF:</strong> Penerima disposisi cukup mengklik link <strong>Buka Disposisi</strong> di Email atau WhatsApp (<code>/disposisi/SM-...?t=...</code>). Tautan dilindungi token rahasia khusus dokumen tersebut.
+</div>
+<ol>
+  <li>Klik tautan disposisi yang diterima di Email atau WhatsApp.</li>
+  <li>Baca langsung <strong>Lembar Disposisi Resmi UNIVSM</strong> dan <strong>Lampiran Surat Masuk</strong> di layar.</li>
+  <li>Setelah melaksanakan arahan pimpinan, gulir ke kotak <strong>Laporkan Tindak Lanjut Selesai (Tanpa Login)</strong>.</li>
+  <li>Pilih/ketik <strong>Nama &amp; Jabatan Pelapor</strong>, tulis <strong>Catatan Hasil Tindak Lanjut</strong>, lalu klik <strong>Kirim Laporan &amp; Tandai Selesai</strong>.</li>
+  <li>Status surat di E-Office otomatis berubah menjadi <strong>Selesai / Arsip</strong>.</li>
+</ol>
+
+<h2>4. Modul Surat Keluar, TTE BSrE &amp; Distribusi Otomatis</h2>
+<div class="flow">Draft &nbsp;&rarr;&nbsp; Verifikasi Atasan &nbsp;&rarr;&nbsp; Penomoran TU &nbsp;&rarr;&nbsp; Menunggu TTE &nbsp;&rarr;&nbsp; Selesai</div>
+
+<h3>4.1. Pembuatan Draft &amp; Penentuan Penerima Notifikasi</h3>
+<ol>
+  <li>Buka menu <strong>Surat Keluar</strong> &rarr; klik <strong>Buat Surat</strong>.</li>
+  <li>Pilih tipe pembuatan: <strong>Dibuat di Sistem</strong> (ketik isi surat langsung dengan KOP otomatis) atau <strong>Upload Surat Manual (PDF)</strong>.</li>
+  <li>Pada bagian <strong>Tujuan Pengiriman Langsung (Email &amp; WhatsApp)</strong>:
+    <ul>
+      <li>Untuk <strong>Surat Internal</strong>: centang satu atau lebih penerima pada daftar user.</li>
+      <li>Untuk <strong>Surat Eksternal</strong>: isi kolom <em>Email Tujuan Eksternal</em> dan/atau <em>No. WhatsApp Tujuan Eksternal</em>.</li>
+    </ul>
+  </li>
+  <li>Klik <strong>Buat Draft Surat</strong>, kemudian klik <strong>Ajukan untuk Verifikasi Atasan</strong>.</li>
+</ol>
+
+<h3>4.2. Verifikasi Atasan &amp; Penomoran TU</h3>
+<ol>
+  <li><strong>Verifikasi:</strong> Atasan/Pimpinan membuka menu <strong>Butuh Verifikasi</strong>, memeriksa isi surat, lalu klik <strong>Setujui Verifikasi (Ke Penomoran)</strong> atau <strong>Tolak / Kembalikan ke Draft</strong>.</li>
+  <li><strong>Penomoran TU:</strong> Admin/TU memeriksa urutan nomor surat. Nomor dapat diubah manual melalui tombol <strong>[Set / Edit Nomor Manual]</strong> agar sesuai buku agenda, lalu klik <strong>Lanjutkan ke Menunggu TTE</strong>.</li>
+</ol>
+
+<h3>4.3. Pengesahan / Penandatanganan (3 Opsi BSrE &amp; Basah)</h3>
+<p>Pejabat Penandatangan membuka menu <strong>Panel Pimpinan &rarr; Butuh Pengesahan / TTE</strong> lalu memilih salah satu metode berikut:</p>
+<table>
+  <thead>
+    <tr>
+      <th style="width:26%;">Metode Pengesahan</th>
+      <th>Langkah Penggunaan</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Opsi 1: TTE Barcode (QR) / API BSrE</strong></td>
+      <td>Klik <strong>Sahkan dengan TTE Barcode (QR)</strong> untuk menempelkan stempel QR Verifikasi resmi UNIVSM. Bila integrasi API BSrE BSSN telah diaktifkan di Pengaturan Admin, sistem meminta <strong>NIK &amp; Passphrase BSrE</strong> untuk menandatangani langsung ke server BSrE.</td>
+    </tr>
+    <tr>
+      <td><strong>Opsi 2: Unduh PDF &rarr; TTD BSrE Digital &rarr; Unggah Final</strong></td>
+      <td>(1) Klik <strong>1. Unduh PDF Siap TTD BSrE</strong> (surat ketikan sistem otomatis diekspor menjadi PDF A4 ber-KOP &amp; Logo). (2) Tandatangani PDF tersebut memakai aplikasi <strong>BSrE Digital</strong> (BeSign/Panter). (3) Unggah kembali file PDF hasilnya pada kolom <strong>2. Unggah PDF Hasil TTD BSrE Anda</strong>. Status surat otomatis menjadi <em>Selesai (TTE BSrE Digital)</em>.</td>
+    </tr>
+    <tr>
+      <td><strong>Opsi 3: TTD Basah (Manual)</strong></td>
+      <td>Klik <strong>Cetak / Print</strong> &rarr; tanda tangani fisik &rarr; klik <strong>Sahkan dengan TTD Basah</strong> &rarr; Admin/TU mengunggah scan PDF finalnya.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>4.4. Distribusi Resmi &amp; Verifikasi QR Tanpa Login</h3>
+<p>Begitu surat berstatus <strong>Selesai</strong>, sistem langsung mengirimkan Email (ber-Logo UNIVSM) dan WhatsApp ke penerima tujuan berisi tautan tanpa login (<code>/surat/DOC-...?t=...</code>). Pemindaian QR Code pada surat (<code>/verify/DOC-...</code>) juga membuka halaman <strong>Verifikasi Keaslian Dokumen Resmi UNIVSM</strong> yang menampilkan status terverifikasi, nomor surat, penandatangan, NIK, tanggal pengesahan, serta preview/unduh PDF resmi.</p>
+
+<h2>5. Modul SPPD (Surat Perintah Perjalanan Dinas)</h2>
+<ol>
+  <li><strong>Buat SPPD &amp; Nomor Manual:</strong> Buka <strong>SPPD &rarr; Buat SPPD Baru</strong>. Ketik <strong>Nomor SPPD secara manual</strong> pada kolom Nomor SPPD (atau kosongkan untuk penomoran otomatis), lengkapi data pegawai/pengikut, zona, tujuan, dan tanggal.</li>
+  <li><strong>Aksi CRUD Lengkap:</strong> Super Admin, Admin, Rektor, dan pembuat SPPD dapat menggunakan 3 ikon aksi di tabel SPPD: <strong>Mata (Lihat)</strong>, <strong>Pensil (Edit)</strong>, dan <strong>Tempat Sampah (Hapus)</strong>.</li>
+  <li><strong>Persetujuan Status Draft:</strong> SPPD baru berstatus <em>Draft</em> menunggu persetujuan. Rektor atau Admin membuka <strong>Detail SPPD</strong> lalu klik <strong>Setujui</strong> atau <strong>Tolak</strong> di pojok kanan atas. Setelah disetujui, klik <strong>Cetak SPPD</strong> (NIK penandatangan Rektor otomatis terisi <code>711018210693</code>).</li>
+</ol>
+
+<h2>6. Pengaturan Admin: Email, WA Gateway (Fonnte) &amp; BSrE</h2>
+<p>Buka menu <strong>Admin Panel &rarr; Notifikasi &amp; BSrE</strong> (khusus Super Admin):</p>
+<ol>
+  <li><strong>Base URL Aplikasi:</strong> Pastikan berisi alamat web E-Office publik Anda (contoh: <code>https://e-office-univsm.vercel.app</code>) agar tautan tanpa login dan gambar Logo UNIVSM di dalam Email tampil normal.</li>
+  <li><strong>Email Otomatis (Gratis):</strong> Centang <strong>Aktif</strong>. Menggunakan layanan <code>MailApp</code> Google Apps Script (hingga 1.500 email/hari untuk Google Workspace <code>@univsm.ac.id</code>).</li>
+  <li><strong>WhatsApp Gateway (Mode Hybrid + Fonnte):</strong>
+    <ul>
+      <li>Daftar di <code>https://md.fonnte.com</code> (tersedia paket Free hingga 1.000 pesan/bulan).</li>
+      <li>Tambah Device (nomor WA pengirim kampus, misal <code>+62 831-6749-5307</code>) &rarr; klik <strong>Connect</strong> &rarr; scan QR lewat <em>WhatsApp Business &rarr; Perangkat Tertaut</em>.</li>
+      <li>Salin <strong>Device Token</strong>, tempel di kolom <strong>API Token WA Gateway</strong> E-Office, pilih Mode <strong>Hybrid</strong>, lalu klik <strong>Simpan Semua Pengaturan</strong>.</li>
+      <li>Uji koneksi melalui kotak <strong>Uji Coba Pengiriman Email &amp; WA</strong> di bagian bawah halaman (gunakan nomor tujuan yang berbeda dari nomor pengirim).</li>
+    </ul>
+  </li>
+  <li><strong>Kontak Pengguna:</strong> Lengkapi Email dan No. WA setiap pegawai di menu <strong>Admin Panel &rarr; Manajemen User</strong>.</li>
+</ol>
+
+<div class="callout">
+  <strong>Catatan Pemeliharaan Backend Google Apps Script (v7):</strong> Setiap kali memperbarui kode <code>Kode.gs</code> dari file <code>backend/backend_gas_v7.gs</code>, pastikan: (1) Jalankan fungsi <code>otorisasiEmail</code> sekali untuk memastikan izin <code>MailApp</code> aktif; (2) Pada menu <strong>Deploy &rarr; Manage deployments &rarr; Edit</strong>, pastikan <em>Execute as</em> = <strong>Me</strong>, <em>Who has access</em> = <strong>Anyone</strong> (wajib Siapa saja agar tidak muncul <em>Failed to fetch</em>), dan <em>Version</em> = <strong>New version</strong>.
+</div>
+
+</body>
+</html>
