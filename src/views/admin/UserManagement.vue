@@ -152,10 +152,6 @@ function deleteUser(id) {
               </select>
             </div>
             <div>
-              <label class="form-label">Email</label>
-              <input v-model="form.email" type="email" class="form-input" />
-            </div>
-            <div>
               <label class="form-label">Hak Akses (Role)</label>
               <select v-model="form.role" class="form-select">
                 <option value="super_admin">Super Admin</option>

@@ -54,6 +54,7 @@ const navItems = computed(() => {
         { name: 'Manajemen User', to: '/admin/users', icon: 'users' },
         { name: 'Manajemen Unit', to: '/admin/units', icon: 'building' },
         { name: 'Jenis Surat', to: '/admin/jenis-surat', icon: 'document' },
+        { name: 'Notifikasi & BSrE', to: '/admin/pengaturan', icon: 'office' },
       ],
     })
   }

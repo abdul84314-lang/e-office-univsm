@@ -26,7 +26,7 @@ const props = defineProps({
       <p class="text-sm font-semibold text-gray-900 mb-2">{{ tte.signer.jabatan }},</p>
 
       <!-- BSrE QR Representation -->
-      <div v-if="method === 'bsre'" class="flex items-center gap-3 my-4">
+      <div v-if="method && method.startsWith('bsre')" class="flex items-center gap-3 my-4">
         <!-- Real Scannable QR -->
         <div class="w-[72px] h-[72px] p-1 border border-gray-400 rounded-sm bg-white shrink-0 flex items-center justify-center">
           <img 
@@ -49,11 +49,11 @@ const props = defineProps({
       <p class="text-sm font-bold text-gray-900 underline underline-offset-4 mt-2">
         {{ tte.signer.nama }}
       </p>
-      <p class="text-sm text-gray-900 mt-0.5">NIK/NIDN. {{ tte.signer.nidn || tte.signer.nik || '-' }}</p>
+      <p class="text-sm text-gray-900 mt-0.5">NIK. {{ tte.signer.nik || tte.signer.nidn || '-' }}</p>
     </div>
   </div>
 
-  <div v-if="method === 'bsre'" class="mt-8 text-[10px] text-gray-500 border-t border-gray-300 pt-2 font-serif text-justify print:mb-0">
+  <div v-if="method && method.startsWith('bsre')" class="mt-8 text-[10px] text-gray-500 border-t border-gray-300 pt-2 font-serif text-justify print:mb-0">
     <i>Dokumen ini telah ditandatangani secara elektronik menggunakan sertifikat elektronik yang diterbitkan oleh Balai Sertifikasi Elektronik (BSrE), Badan Siber dan Sandi Negara (BSSN). Sistem memastikan keaslian dan keutuhan dokumen ini.</i>
   </div>
 </template>

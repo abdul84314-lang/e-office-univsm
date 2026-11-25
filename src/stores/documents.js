@@ -134,11 +134,22 @@ export const useDocumentsStore = defineStore('documents', () => {
     if (signerUser && !doc.tte) {
       doc.tte = {
         tanggal: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+        method: extraData.tteMethod || 'bsre_qr',
         signer: { nama: signerUser.name, jabatan: signerUser.jabatan, nidn: signerUser.nidn, nik: signerUser.nik }
       }
     }
 
+    // Jika membawa fileBase64 (misal hasil stempel QR atau upload PDF BSrE), tunggu respons agar driveViewUrl langsung diperbarui
+    if (extraData.fileBase64) {
+      const res = await gasPost('update_document', doc)
+      if (res && res.success && res.document) {
+        Object.assign(doc, res.document)
+      }
+      return res
+    }
+
     gasPost('update_document', doc).catch(console.error) // Optimistic
+    return { success: true }
   }
 
   async function rejectDocument(docId, reason, authorName) {

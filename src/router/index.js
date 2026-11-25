@@ -98,6 +98,12 @@ const routes = [
         component: () => import('../views/admin/JenisSuratManagement.vue'),
         meta: { requireAdmin: true },
       },
+      {
+        path: 'admin/pengaturan',
+        name: 'NotificationSettings',
+        component: () => import('../views/admin/NotificationSettings.vue'),
+        meta: { requireAdmin: true },
+      },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' },

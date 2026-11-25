@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useSuratMasukStore } from '../../stores/suratMasuk.js'
 import { useAuthStore } from '../../stores/auth.js'
+import { getSifatLabel } from '../../composables/useNotification.js'
 import StatusBadge from '../../components/common/StatusBadge.vue'
 
 const router = useRouter()
@@ -28,14 +29,30 @@ watch(() => route.query.filter, (newVal) => {
   else filterStatus.value = ''
 })
 
+function isDisposisiRecipient(doc, userId) {
+  if (!doc?.disposisi || !userId) return false
+  if (doc.disposisi.kepadaId === userId) return true
+  if (Array.isArray(doc.disposisi.kepadaIds) && doc.disposisi.kepadaIds.includes(userId)) return true
+  if (Array.isArray(doc.disposisi.penerimaList) && doc.disposisi.penerimaList.some(p => p.id === userId)) return true
+  return false
+}
+
+function formatDisposisiRecipients(doc) {
+  if (!doc?.disposisi) return ''
+  if (Array.isArray(doc.disposisi.penerimaList) && doc.disposisi.penerimaList.length > 0) {
+    return doc.disposisi.penerimaList.map(p => p.jabatan || p.nama).join(', ')
+  }
+  return doc.disposisi.kepadaNama?.split(',')[0] || '-'
+}
+
 const filtered = computed(() => {
   let list = smStore.sortedDocuments
-  
+
   if (filterStatus.value === 'action_needed') {
     list = list.filter(d => {
-      // Disposisi Masuk logic: Needs disposition or action from current user
-      const isPenerima = d.penerimaId === auth.currentUser?.id
-      const isDisposisiTujuan = d.disposisi?.kepadaId === auth.currentUser?.id
+      const uid = auth.currentUser?.id
+      const isPenerima = d.penerimaId === uid
+      const isDisposisiTujuan = isDisposisiRecipient(d, uid)
       return (d.status === 'disposisi' && isPenerima) || (d.status === 'tindak_lanjut' && isDisposisiTujuan)
     })
   } else if (filterStatus.value) {
@@ -47,7 +64,8 @@ const filtered = computed(() => {
     list = list.filter(d =>
       d.asalSurat?.toLowerCase().includes(q) ||
       d.perihal?.toLowerCase().includes(q) ||
-      d.nomorSuratAsal?.toLowerCase().includes(q)
+      d.nomorSuratAsal?.toLowerCase().includes(q) ||
+      d.nomorAgenda?.toLowerCase().includes(q)
     )
   }
   return list
@@ -59,8 +77,8 @@ const filtered = computed(() => {
     <!-- Page header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-xl font-bold text-gray-900">Surat Masuk</h1>
-        <p class="text-sm text-gray-500 mt-0.5">Kelola penerimaan dan disposisi surat masuk dari luar universitas</p>
+        <h1 class="text-xl font-bold text-gray-900">Surat Masuk & Disposisi</h1>
+        <p class="text-sm text-gray-500 mt-0.5">Kelola penerimaan surat masuk, lembar disposisi digital, dan distribusi notifikasi Email/WA</p>
       </div>
       <RouterLink v-if="auth.isAdmin || auth.isUnitAdmin" to="/surat-masuk/buat" class="btn-primary">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -75,11 +93,12 @@ const filtered = computed(() => {
       <input
         v-model="search"
         type="text"
-        placeholder="Cari asalsurat / perihal..."
+        placeholder="Cari asal surat / nomor / agenda / perihal..."
         class="form-input max-w-xs"
       />
       <select v-model="filterStatus" class="form-select w-auto">
         <option value="">Semua Status</option>
+        <option value="action_needed">! Butuh Disposisi / Tindak Lanjut Saya</option>
         <option v-for="s in smStore.SURAT_MASUK_STATUSES" :key="s.key" :value="s.key">
           {{ s.label }}
         </option>
@@ -97,8 +116,8 @@ const filtered = computed(() => {
             <tr>
               <th class="table-header w-8">#</th>
               <th class="table-header">Asal Surat / Nomor</th>
-              <th class="table-header">Perihal</th>
-              <th class="table-header">Disposisi Ke</th>
+              <th class="table-header">Perihal / Sifat</th>
+              <th class="table-header">Diteruskan Kepada</th>
               <th class="table-header">Status</th>
               <th class="table-header">Tanggal Surat</th>
               <th class="table-header text-right">Aksi</th>
@@ -119,13 +138,20 @@ const filtered = computed(() => {
               <td class="table-cell max-w-xs">
                 <p class="font-bold text-gray-900 truncate">{{ doc.asalSurat }}</p>
                 <p class="font-mono text-xs text-gray-500 truncate">{{ doc.nomorSuratAsal }}</p>
+                <p v-if="doc.nomorAgenda" class="font-mono text-[11px] text-primary-700 truncate">Agenda: {{ doc.nomorAgenda }}</p>
               </td>
               <td class="table-cell max-w-xs">
                 <p class="font-medium text-gray-900 line-clamp-2">{{ doc.perihal }}</p>
+                <span
+                  class="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold"
+                  :class="doc.sifatSurat === 'sangat_segera' ? 'bg-red-100 text-red-800' : doc.sifatSurat === 'rahasia' ? 'bg-purple-100 text-purple-800' : 'bg-blue-50 text-blue-700'"
+                >
+                  {{ getSifatLabel(doc.sifatSurat) }}
+                </span>
               </td>
-              <td class="table-cell text-sm">
-                <span v-if="doc.disposisi" class="text-primary-700 font-semibold">
-                  {{ doc.disposisi.kepadaNama.split(',')[0] }}
+              <td class="table-cell text-sm max-w-[200px]">
+                <span v-if="doc.disposisi" class="text-primary-700 font-semibold line-clamp-2">
+                  {{ formatDisposisiRecipients(doc) }}
                 </span>
                 <span v-else class="text-gray-400 italic">Belum didisposisikan</span>
               </td>
@@ -136,21 +162,21 @@ const filtered = computed(() => {
                 />
               </td>
               <td class="table-cell text-xs text-gray-500 whitespace-nowrap">
-                {{ new Date(doc.tanggalSurat).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }) }}
+                {{ doc.tanggalSurat ? new Date(doc.tanggalSurat).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }) : '-' }}
               </td>
               <td class="table-cell text-right">
                 <div class="flex items-center justify-end gap-1">
                   <RouterLink
                     :to="`/surat-masuk/${doc.id}`"
                     class="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
-                    title="Lihat Detail"
+                    title="Lihat Detail & Disposisi"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                       <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                   </RouterLink>
-                  
+
                   <RouterLink
                     v-if="auth.isAdmin"
                     :to="`/surat-masuk/${doc.id}`"
