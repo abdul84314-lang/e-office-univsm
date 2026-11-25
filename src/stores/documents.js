@@ -61,9 +61,14 @@ export const useDocumentsStore = defineStore('documents', () => {
     return idx > 0 ? DOCUMENT_STATUSES[idx - 1].key : currentStatus
   }
 
+  function generateShareToken() {
+    return 'srt_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
+  }
+
   async function createDocument(data, author) {
     const doc = {
       id: 'DOC-' + new Date().getTime(),
+      shareToken: generateShareToken(),
       type: 'SuratKeluar',
       ...data,
       createdBy: author.id,
@@ -119,6 +124,9 @@ export const useDocumentsStore = defineStore('documents', () => {
     const doc = documents.value.find(d => d.id === docId)
     if (!doc || doc.status === 'selesai') return
 
+    if (!doc.shareToken) {
+      doc.shareToken = generateShareToken()
+    }
     doc.status = 'selesai'
     doc.statusHistory.push({ status: 'selesai', at: new Date().toISOString(), by: author.name })
 

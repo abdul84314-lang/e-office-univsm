@@ -1,4 +1,7 @@
 <script setup>
+import { computed } from 'vue'
+import { getAppBaseUrl } from '../../composables/useNotification.js'
+
 const props = defineProps({
   tte: { type: Object, required: true },
   tanggalSurat: { type: String, default: '' },
@@ -6,6 +9,8 @@ const props = defineProps({
   method:       { type: String, default: 'bsre' }, // 'bsre' | 'basah'
   docId:        { type: String, default: 'DOC-UNIVSM' },
 })
+
+const verifyUrl = computed(() => `${getAppBaseUrl()}/verify/${props.docId}`)
 </script>
 
 <template>
@@ -30,7 +35,7 @@ const props = defineProps({
         <!-- Real Scannable QR -->
         <div class="w-[72px] h-[72px] p-1 border border-gray-400 rounded-sm bg-white shrink-0 flex items-center justify-center">
           <img 
-            :src="`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://e-office.univsm.ac.id/verify/${docId}`" 
+            :src="`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(verifyUrl)}`" 
             alt="QR Code TTE" 
             class="w-full h-full object-contain"
           />

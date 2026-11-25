@@ -36,10 +36,15 @@ export const useSuratMasukStore = defineStore('suratMasuk', () => {
     return `${String(count).padStart(3, '0')}/AGD-SM/${romanMonths[now.getMonth()]}/${now.getFullYear()}`
   }
 
+  function generateShareToken() {
+    return 'dsp_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
+  }
+
   async function createSuratMasuk(data) {
     const today = new Date().toISOString().slice(0, 10)
     const doc = {
       id: 'SM-' + Date.now(),
+      shareToken: generateShareToken(),
       ...data,
       tanggalDiterima: data.tanggalDiterima || today,
       nomorAgenda: data.nomorAgenda || generateNextNomorAgenda(),
@@ -63,6 +68,10 @@ export const useSuratMasukStore = defineStore('suratMasuk', () => {
   async function addDisposisi(docId, disposisiData) {
     const doc = documents.value.find(d => d.id === docId)
     if (!doc) return null
+
+    if (!doc.shareToken) {
+      doc.shareToken = generateShareToken()
+    }
 
     const penerimaList = disposisiData.penerimaList || []
     const first = penerimaList[0] || {}

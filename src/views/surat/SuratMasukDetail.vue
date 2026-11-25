@@ -119,8 +119,24 @@ const previewUrl = computed(() => {
 // Notification state
 const notifSending = ref(false)
 const notifStatus = ref(null)
+const copiedPublicLink = ref(false)
 
 const docAppLink = computed(() => `${getAppBaseUrl()}/surat-masuk/${doc.value?.id || ''}`)
+
+const publicDisposisiLink = computed(() => {
+  if (!doc.value) return ''
+  const tokenQ = doc.value.shareToken ? `?t=${encodeURIComponent(doc.value.shareToken)}` : ''
+  return `${getAppBaseUrl()}/disposisi/${doc.value.id}${tokenQ}`
+})
+
+async function copyPublicDisposisiLink() {
+  if (!publicDisposisiLink.value) return
+  try {
+    await navigator.clipboard.writeText(publicDisposisiLink.value)
+    copiedPublicLink.value = true
+    setTimeout(() => { copiedPublicLink.value = false }, 2500)
+  } catch {}
+}
 
 const suratMasukPenerimaObj = computed(() => {
   const u = auth.users.find(x => x.id === doc.value?.penerimaId)
@@ -151,7 +167,7 @@ const activeNotifRecipients = computed(() =>
 const activeWaText = computed(() => {
   if (!doc.value) return ''
   if (doc.value.disposisi) {
-    return buildDisposisiWaText(doc.value, doc.value.disposisi, docAppLink.value)
+    return buildDisposisiWaText(doc.value, doc.value.disposisi, publicDisposisiLink.value)
   }
   const p = auth.users.find(x => x.id === doc.value.penerimaId)
   return buildSuratMasukWaText(doc.value, p, docAppLink.value)
@@ -191,7 +207,8 @@ async function triggerDisposisiNotif(targetDoc) {
     }
   })
   notifSending.value = true
-  const link = `${getAppBaseUrl()}/surat-masuk/${targetDoc.id}`
+  const tokenQ = targetDoc.shareToken ? `?t=${encodeURIComponent(targetDoc.shareToken)}` : ''
+  const link = `${getAppBaseUrl()}/disposisi/${targetDoc.id}${tokenQ}`
   const res = await dispatchNotification({
     docId: targetDoc.id,
     category: 'disposisi',
@@ -413,7 +430,10 @@ function printDisposisi() {
           {{ doc.nomorAgenda ? `Agenda: ${doc.nomorAgenda}` : doc.id }}
         </p>
       </div>
-      <div v-if="!isCreateRoute && doc" class="flex items-center gap-2">
+      <div v-if="!isCreateRoute && doc" class="flex flex-wrap items-center gap-2">
+        <button v-if="doc.disposisi" class="btn-secondary btn-sm text-xs" @click="copyPublicDisposisiLink">
+          {{ copiedPublicLink ? 'Link Disposisi Disalin!' : 'Salin Link Disposisi (Tanpa Login)' }}
+        </button>
         <button v-if="doc.disposisi" class="btn-secondary btn-sm" @click="printDisposisi">
           Cetak Lembar Disposisi
         </button>

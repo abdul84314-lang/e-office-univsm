@@ -9,6 +9,24 @@ const routes = [
     meta: { public: true },
   },
   {
+    path: '/disposisi/:id',
+    name: 'PublicDisposisi',
+    component: () => import('../views/public/PublicDisposisiView.vue'),
+    meta: { public: true },
+  },
+  {
+    path: '/surat/:id',
+    name: 'PublicSurat',
+    component: () => import('../views/public/PublicSuratView.vue'),
+    meta: { public: true },
+  },
+  {
+    path: '/verify/:id',
+    name: 'VerifySurat',
+    component: () => import('../views/public/PublicSuratView.vue'),
+    meta: { public: true },
+  },
+  {
     path: '/',
     component: () => import('../components/layout/AppLayout.vue'),
     meta: { requiresAuth: true },

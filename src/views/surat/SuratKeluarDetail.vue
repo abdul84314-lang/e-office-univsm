@@ -232,8 +232,24 @@ const outgoingRecipients = computed(() => {
 
 const notifSending = ref(false)
 const notifStatus = ref(null)
+const copiedPublicSuratLink = ref(false)
 
 const docAppLink = computed(() => `${getAppBaseUrl()}/surat-keluar/${doc.value?.id || ''}`)
+
+const publicSuratLink = computed(() => {
+  if (!doc.value) return ''
+  const tokenQ = doc.value.shareToken ? `?t=${encodeURIComponent(doc.value.shareToken)}` : ''
+  return `${getAppBaseUrl()}/surat/${doc.value.id}${tokenQ}`
+})
+
+async function copyPublicSuratLink() {
+  if (!publicSuratLink.value) return
+  try {
+    await navigator.clipboard.writeText(publicSuratLink.value)
+    copiedPublicSuratLink.value = true
+    setTimeout(() => { copiedPublicSuratLink.value = false }, 2500)
+  } catch {}
+}
 
 const stageNotifLabel = computed(() => {
   if (!doc.value) return 'Surat Keluar'
@@ -264,7 +280,8 @@ const activeRecipientsForStage = computed(() => {
 
 const activeWaText = computed(() => {
   if (!doc.value) return ''
-  return buildSuratKeluarWaText(doc.value, stageNotifLabel.value, docAppLink.value)
+  const targetLink = doc.value.status === 'selesai' ? publicSuratLink.value : docAppLink.value
+  return buildSuratKeluarWaText(doc.value, stageNotifLabel.value, targetLink)
 })
 
 async function triggerStageNotif(targetDoc, customStageLabel = '', customRecipients = null) {
@@ -272,7 +289,10 @@ async function triggerStageNotif(targetDoc, customStageLabel = '', customRecipie
   const recips = customRecipients || activeRecipientsForStage.value
   if (!recips.length) return
   const label = customStageLabel || stageNotifLabel.value
-  const link = `${getAppBaseUrl()}/surat-keluar/${targetDoc.id}`
+  const tokenQ = targetDoc.shareToken ? `?t=${encodeURIComponent(targetDoc.shareToken)}` : ''
+  const link = targetDoc.status === 'selesai'
+    ? `${getAppBaseUrl()}/surat/${targetDoc.id}${tokenQ}`
+    : `${getAppBaseUrl()}/surat-keluar/${targetDoc.id}`
 
   notifSending.value = true
   const res = await dispatchNotification({
@@ -307,7 +327,7 @@ async function getReadyPdfBase64({ withQr = false } = {}) {
 
   if (!targetB64) {
     // Surat dibuat di sistem -> konversi langsung ke PDF A4 siap TTD BSrE
-    const verifyUrl = `${getAppBaseUrl()}/surat-keluar/${doc.value?.id || 'verify'}`
+    const verifyUrl = `${getAppBaseUrl()}/verify/${doc.value?.id || 'verify'}`
     return await generateSystemLetterPdfBase64(doc.value, form.value, signer, {
       includeQr: withQr,
       verifyUrl,
@@ -315,7 +335,7 @@ async function getReadyPdfBase64({ withQr = false } = {}) {
   }
 
   if (withQr) {
-    const qrUrl = await QRCode.toDataURL(`${getAppBaseUrl()}/surat-keluar/${doc.value?.id || 'verify'}`, { width: 150 })
+    const qrUrl = await QRCode.toDataURL(`${getAppBaseUrl()}/verify/${doc.value?.id || 'verify'}`, { width: 150 })
     return await stampPdfWithQR(targetB64, qrUrl, signer)
   }
 
@@ -574,6 +594,9 @@ const tteBadgeLabel = computed(() => {
           </div>
         </div>
         <div v-if="!isCreateRoute && doc" class="flex flex-wrap gap-2">
+          <button v-if="doc.status === 'selesai'" class="btn-secondary btn-sm text-xs" @click="copyPublicSuratLink">
+            {{ copiedPublicSuratLink ? 'Link Surat Disalin!' : 'Salin Link Surat (Tanpa Login)' }}
+          </button>
           <button class="btn-secondary btn-sm" :disabled="isProcessingBsre" @click="handleDownloadForBsre">
             {{ isProcessingBsre ? 'Menyiapkan PDF...' : 'Unduh PDF (Untuk BSrE / Arsip)' }}
           </button>
