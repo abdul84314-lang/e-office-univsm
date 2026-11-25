@@ -78,12 +78,31 @@ export async function generateSystemLetterPdfBase64(doc, form, signer, { include
 
   const kop = useKopSurat(form.unitId || doc?.unitId || 'rektor')
 
-  // Helper centered text
+  // Embed Logo UNIVSM di KOP PDF
+  try {
+    const logoPath = form.sifatTujuan === 'internal' ? '/logo-bw.png' : '/logo.png'
+    const resp = await fetch(logoPath)
+    if (resp.ok) {
+      const logoBytes = await resp.arrayBuffer()
+      const logoImg = await pdfDoc.embedPng(logoBytes)
+      page.drawImage(logoImg, {
+        x: marginX,
+        y: pageHeight - 118,
+        width: 74,
+        height: 74,
+      })
+    }
+  } catch (e) {
+    console.warn('Logo KOP PDF dilewati:', e)
+  }
+
+  // Helper centered text (sedikit geser kanan agar seimbang dengan logo)
+  const textCenterX = pageWidth / 2 + 24
   const drawCentered = (txt, size, font, color = rgb(0, 0, 0)) => {
     if (!txt) return
     const safeTxt = String(txt).replace(/[^\x20-\x7E\xA0-\xFF]/g, '')
     const w = font.widthOfTextAtSize(safeTxt, size)
-    page.drawText(safeTxt, { x: (pageWidth - w) / 2, y, size, font, color })
+    page.drawText(safeTxt, { x: textCenterX - w / 2, y, size, font, color })
     y -= size + 4
   }
 

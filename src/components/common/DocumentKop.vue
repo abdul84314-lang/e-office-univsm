@@ -21,6 +21,7 @@ const kop = computed(() => useKopSurat(props.unitId))
         alt="Logo UNIVSM"
         :class="compact ? 'w-[70px] h-[70px]' : 'w-[110px] h-[110px]'"
         class="object-contain shrink-0"
+        @error="$event.target.src = '/logo.png'"
       />
 
       <!-- Text block -->

@@ -69,6 +69,8 @@ export function getSifatLabel(key) {
 export function buildDisposisiEmailHtml(doc, disposisi, appLink) {
   const sifat = disposisi.sifatSurat || doc.sifatSurat || 'segera'
   const checkBox = (active) => active ? '&#9745;' : '&#9744;'
+  const baseUrl = getAppBaseUrl()
+  const logoUrl = `${baseUrl}/logo-bw.png`
 
   const penerimaRows = (disposisi.penerimaList || [{ nama: disposisi.kepadaNama || '-' }])
     .map((p, idx) => `<div style="margin-bottom:4px;">${idx + 1}. ${escapeHtml(p.jabatan ? `${p.jabatan} (${p.nama})` : p.nama)}</div>`)
@@ -87,13 +89,29 @@ export function buildDisposisiEmailHtml(doc, disposisi, appLink) {
     : ''
 
   return `
-  <div style="font-family:Arial,Helvetica,sans-serif;max-width:680px;margin:0 auto;color:#111827;background:#f9fafb;padding:20px;">
-    <div style="background:#ffffff;border:2px solid #111827;padding:20px;">
-      <div style="text-align:center;border-bottom:3px double #111827;padding-bottom:10px;margin-bottom:12px;">
-        <div style="font-size:11px;letter-spacing:0.5px;">YAYASAN SAPTA BAKTI PENDIDIKAN</div>
-        <div style="font-size:18px;font-weight:bold;">UNIVERSITAS SAPTA MANDIRI</div>
-        <div style="font-size:12px;font-weight:bold;">SK Pendirian No. 661 / E/O/2024</div>
-      </div>
+  <div style="font-family:'Times New Roman',Times,Georgia,serif;max-width:700px;margin:0 auto;color:#111827;background:#f9fafb;padding:20px;">
+    <div style="background:#ffffff;border:1px solid #d1d5db;padding:22px;">
+      <!-- KOP Resmi Universitas Sapta Mandiri dengan Logo -->
+      <table style="width:100%;border-collapse:collapse;border-bottom:4px double #111827;margin-bottom:14px;">
+        <tr>
+          <td style="width:88px;vertical-align:middle;padding:0 10px 10px 0;">
+            <img src="${logoUrl}" alt="Logo UNIVSM" width="80" height="80" style="display:block;width:80px;height:80px;object-fit:contain;" />
+          </td>
+          <td style="text-align:center;vertical-align:middle;padding-bottom:10px;">
+            <div style="font-size:11px;letter-spacing:0.4px;text-transform:uppercase;">YAYASAN SAPTA BAKTI PENDIDIKAN</div>
+            <div style="font-size:19px;font-weight:bold;letter-spacing:0.5px;">UNIVERSITAS SAPTA MANDIRI</div>
+            <div style="font-size:12px;font-weight:bold;margin:2px 0 4px;">SK Pendirian No. 661 / E/O/2024</div>
+            <div style="font-size:9.5px;line-height:1.35;color:#1f2937;">
+              Kampus I : JL. A. Yani RT 07 Kel. Batu Piring Kec. Paringin Selatan Kab. Balangan Kalsel<br/>
+              Kampus II : JL. A. Yani KM. 5 Kel. Batu Piring Kec. Paringin Selatan Kab. Balangan Kalsel<br/>
+              Kampus III : JL. A. Yani RT. 13, Paringin Kota, Paringin, Balangan, Kalsel<br/>
+              Telp/Fax (0526) 209 5962 CP: 0877 7687 7462 Kode Pos: 71618<br/>
+              Website: <a href="http://www.univsm.ac.id" style="color:#1d4ed8;">www.univsm.ac.id</a> Email: <a href="mailto:info@univsm.ac.id" style="color:#1d4ed8;">info@univsm.ac.id</a>
+            </div>
+          </td>
+          <td style="width:24px;"></td>
+        </tr>
+      </table>
 
       <table style="width:100%;border-collapse:collapse;border:2px solid #111827;font-size:13px;">
         <tr>
@@ -191,13 +209,24 @@ export function buildDisposisiWaText(doc, disposisi, appLink) {
 }
 
 export function buildSuratMasukEmailHtml(doc, penerima, appLink) {
+  const logoUrl = `${getAppBaseUrl()}/logo.png`
   const driveBtn = doc.driveViewUrl
     ? `<a href="${doc.driveViewUrl}" style="display:inline-block;padding:10px 18px;background:#0f766e;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;font-size:13px;margin-left:8px;">Lihat File Surat</a>`
     : ''
   return `
   <div style="font-family:Arial,Helvetica,sans-serif;max-width:640px;margin:0 auto;color:#111827;background:#f9fafb;padding:20px;">
     <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:24px;">
-      <h2 style="margin:0 0 8px;color:#1e3a8a;">Surat Masuk Baru Menunggu Disposisi</h2>
+      <table style="width:100%;border-collapse:collapse;border-bottom:2px solid #e5e7eb;margin-bottom:16px;">
+        <tr>
+          <td style="width:56px;padding-bottom:12px;vertical-align:middle;">
+            <img src="${logoUrl}" alt="Logo UNIVSM" width="48" height="48" style="display:block;width:48px;height:48px;object-fit:contain;" />
+          </td>
+          <td style="padding-bottom:12px;vertical-align:middle;">
+            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;">E-Office Universitas Sapta Mandiri</div>
+            <h2 style="margin:2px 0 0;color:#1e3a8a;font-size:17px;">Surat Masuk Baru Menunggu Disposisi</h2>
+          </td>
+        </tr>
+      </table>
       <p style="font-size:13px;color:#4b5563;margin:0 0 16px;">Yth. <strong>${escapeHtml(penerima?.name || 'Pimpinan')}</strong>, terdapat surat masuk baru yang ditujukan kepada Anda:</p>
       <table style="width:100%;border-collapse:collapse;font-size:13px;">
         <tr><td style="padding:6px 0;color:#6b7280;width:150px;">Asal Surat</td><td style="padding:6px 0;font-weight:bold;">${escapeHtml(doc.asalSurat)}</td></tr>
@@ -232,6 +261,7 @@ export function buildSuratMasukWaText(doc, penerima, appLink) {
 }
 
 export function buildSuratKeluarEmailHtml(doc, stageLabel, appLink) {
+  const logoUrl = `${getAppBaseUrl()}/logo.png`
   const driveBtn = doc.driveViewUrl
     ? `<a href="${doc.driveViewUrl}" style="display:inline-block;padding:10px 18px;background:#0f766e;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;font-size:13px;margin-left:8px;">Buka Dokumen PDF</a>`
     : ''
@@ -244,8 +274,17 @@ export function buildSuratKeluarEmailHtml(doc, stageLabel, appLink) {
   return `
   <div style="font-family:Arial,Helvetica,sans-serif;max-width:640px;margin:0 auto;color:#111827;background:#f9fafb;padding:20px;">
     <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:24px;">
-      <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">E-Office Universitas Sapta Mandiri</div>
-      <h2 style="margin:6px 0 12px;color:#1e3a8a;">${escapeHtml(stageLabel)} ${tteBadge}</h2>
+      <table style="width:100%;border-collapse:collapse;border-bottom:2px solid #e5e7eb;margin-bottom:16px;">
+        <tr>
+          <td style="width:56px;padding-bottom:12px;vertical-align:middle;">
+            <img src="${logoUrl}" alt="Logo UNIVSM" width="48" height="48" style="display:block;width:48px;height:48px;object-fit:contain;" />
+          </td>
+          <td style="padding-bottom:12px;vertical-align:middle;">
+            <div style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">E-Office Universitas Sapta Mandiri</div>
+            <h2 style="margin:3px 0 0;color:#1e3a8a;font-size:17px;">${escapeHtml(stageLabel)} ${tteBadge}</h2>
+          </td>
+        </tr>
+      </table>
       <table style="width:100%;border-collapse:collapse;font-size:13px;">
         <tr><td style="padding:6px 0;color:#6b7280;width:150px;">Nomor Surat</td><td style="padding:6px 0;font-weight:bold;">${escapeHtml(doc.nomorSurat || '[Menunggu Penomoran]')}</td></tr>
         <tr><td style="padding:6px 0;color:#6b7280;">Judul / Perihal</td><td style="padding:6px 0;font-weight:bold;">${escapeHtml(doc.perihal || doc.judul)}</td></tr>
