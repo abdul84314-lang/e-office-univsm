@@ -1,4 +1,4 @@
-export const GAS_URL = 'https://script.google.com/macros/s/AKfycbzhpuOp8rKiDYg_7YRxD4uY4NPciuijpTUcZ86tGfaWdSh8Ibtwl7pPxn3wtHfEHNoXgw/exec';
+export const GAS_URL = 'https://script.google.com/macros/s/AKfycbzG7kJg6BlLahnZ3gUgRGxoJ4dkxtg8Vym0WOf8xgvWtp6hIUoRbaPVASFhuN18zMM6ag/exec';
 
 /**
  * Memanggil endpoint POST di Google Apps Script
