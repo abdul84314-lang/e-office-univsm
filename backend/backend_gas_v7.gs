@@ -447,3 +447,16 @@ function handleLogin(data) {
   }
   return jsonResponse({ success: false, message: 'Email atau Password salah' });
 }
+
+/**
+ * Jalankan fungsi ini 1x dari editor Google Apps Script (pilih 'otorisasiEmail' lalu klik Run)
+ * untuk memicu dialog izin pengiriman email (MailApp.sendEmail).
+ */
+function otorisasiEmail() {
+  const sisa = MailApp.getRemainingDailyQuota();
+  Logger.log('Izin MailApp AKTIF! Sisa kuota email hari ini: ' + sisa);
+  const myEmail = Session.getActiveUser().getEmail();
+  if (myEmail) {
+    MailApp.sendEmail(myEmail, 'Tes Otorisasi E-Office UNIVSM', 'Izin pengiriman email E-Office UNIVSM berhasil aktif!');
+  }
+}
