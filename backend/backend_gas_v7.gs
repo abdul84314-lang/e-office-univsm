@@ -94,7 +94,8 @@ function sendWaViaGateway(phone, message, cfg) {
       payload: {
         target: phone,
         message: message,
-        countryCode: '62'
+        countryCode: '62',
+        delay: '2'
       },
       muteHttpExceptions: true
     };
@@ -121,7 +122,21 @@ function sendWaViaGateway(phone, message, cfg) {
   const res = UrlFetchApp.fetch(url, options);
   const code = res.getResponseCode();
   const body = res.getContentText();
-  return { sent: code >= 200 && code < 300, code: code, body: body };
+  let ok = code >= 200 && code < 300;
+  let reason = '';
+
+  // Fonnte & Wablas sering mengembalikan HTTP 200 meski status: false (misal device disconnected)
+  try {
+    const parsed = JSON.parse(body);
+    if (parsed && parsed.status === false) {
+      ok = false;
+      reason = parsed.reason || parsed.message || body;
+    } else if (parsed && parsed.detail) {
+      reason = parsed.detail;
+    }
+  } catch (e) {}
+
+  return { sent: ok, code: code, body: body, reason: reason };
 }
 
 function handleSendNotification(payload) {
@@ -159,7 +174,7 @@ function handleSendNotification(payload) {
       try {
         const waRes = sendWaViaGateway(r.phone, waText, cfg);
         if (waRes.sent) waSentCount++;
-        else errors.push('WA ke ' + r.phone + ' gagal (HTTP ' + waRes.code + ')');
+        else errors.push('WA ke ' + r.phone + ' ditolak: ' + (waRes.reason || ('HTTP ' + waRes.code)));
       } catch (e) {
         errors.push('WA ke ' + r.phone + ' error: ' + e.message);
       }

@@ -198,7 +198,7 @@ async function triggerSuratMasukNotif(targetDoc) {
 
 async function triggerDisposisiNotif(targetDoc) {
   if (!targetDoc?.disposisi) return
-  const recips = (targetDoc.disposisi.penerimaList || []).map(p => {
+  let recips = (targetDoc.disposisi.penerimaList || []).map(p => {
     const u = p.id ? auth.users.find(x => x.id === p.id) : null
     return {
       name: p.nama || u?.name || '-',
@@ -206,6 +206,10 @@ async function triggerDisposisiNotif(targetDoc) {
       phone: p.phone || u?.phone || '',
     }
   })
+  if (!recips.length && targetDoc.disposisi.kepadaId) {
+    const u = auth.users.find(x => x.id === targetDoc.disposisi.kepadaId)
+    if (u) recips = [{ name: u.name, email: u.email || '', phone: u.phone || '' }]
+  }
   notifSending.value = true
   const tokenQ = targetDoc.shareToken ? `?t=${encodeURIComponent(targetDoc.shareToken)}` : ''
   const link = `${getAppBaseUrl()}/disposisi/${targetDoc.id}${tokenQ}`
@@ -282,8 +286,11 @@ const disposisiForm = ref({
 })
 
 const newCustom = ref({ nama: '', jabatan: '', email: '', phone: '' })
+const editingCustomIdx = ref(-1)
 
 function openDisposisiModal() {
+  editingCustomIdx.value = -1
+  newCustom.value = { nama: '', jabatan: '', email: '', phone: '' }
   const existing = doc.value?.disposisi
   if (existing) {
     disposisiForm.value = {
@@ -325,19 +332,47 @@ function toggleRecipientUser(userId) {
 
 function addCustomRecipient() {
   if (!newCustom.value.nama.trim()) return
-  disposisiForm.value.customRecipients.push({
+  const entry = {
     id: null,
     nama: newCustom.value.nama.trim(),
     jabatan: newCustom.value.jabatan.trim(),
     email: newCustom.value.email.trim(),
     phone: newCustom.value.phone.trim(),
     isCustom: true,
-  })
+  }
+  if (editingCustomIdx.value >= 0) {
+    disposisiForm.value.customRecipients.splice(editingCustomIdx.value, 1, entry)
+    editingCustomIdx.value = -1
+  } else {
+    disposisiForm.value.customRecipients.push(entry)
+  }
+  newCustom.value = { nama: '', jabatan: '', email: '', phone: '' }
+}
+
+function editCustomRecipient(idx) {
+  const c = disposisiForm.value.customRecipients[idx]
+  if (!c) return
+  editingCustomIdx.value = idx
+  newCustom.value = {
+    nama: c.nama || '',
+    jabatan: c.jabatan || '',
+    email: c.email || '',
+    phone: c.phone || '',
+  }
+}
+
+function cancelEditCustomRecipient() {
+  editingCustomIdx.value = -1
   newCustom.value = { nama: '', jabatan: '', email: '', phone: '' }
 }
 
 function removeCustomRecipient(idx) {
   disposisiForm.value.customRecipients.splice(idx, 1)
+  if (editingCustomIdx.value === idx) {
+    cancelEditCustomRecipient()
+  } else if (editingCustomIdx.value > idx) {
+    editingCustomIdx.value--
+  }
 }
 
 function toggleHarap(item) {
@@ -688,26 +723,42 @@ function printDisposisi() {
                 </label>
               </div>
 
-              <!-- Tambah penerima manual / eksternal (misal Ketua LPPM / Ybs / Unit lain) -->
+              <!-- Tambah / Edit penerima manual / eksternal (misal Ketua LPPM / Ybs / Unit lain) -->
               <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-200 space-y-2">
-                <p class="text-[11px] font-semibold text-gray-600">Tambah Penerima Tambahan (Opsional)</p>
+                <p class="text-[11px] font-semibold text-gray-600">
+                  {{ editingCustomIdx >= 0 ? 'Edit Penerima Disposisi' : 'Tambah Penerima Tambahan (Opsional)' }}
+                </p>
                 <div class="grid grid-cols-2 gap-1.5">
                   <input v-model="newCustom.jabatan" type="text" class="form-input text-xs py-1" placeholder="Jabatan (mis. Ketua LPPM)" />
                   <input v-model="newCustom.nama" type="text" class="form-input text-xs py-1" placeholder="Nama / Ybs *" />
                   <input v-model="newCustom.email" type="email" class="form-input text-xs py-1" placeholder="Email (opsional)" />
                   <input v-model="newCustom.phone" type="text" class="form-input text-xs py-1" placeholder="No. WA (opsional)" />
                 </div>
-                <button type="button" @click="addCustomRecipient" class="btn-secondary btn-sm w-full text-xs">
-                  + Tambahkan ke Daftar Tujuan
-                </button>
+                <div class="flex gap-1.5">
+                  <button type="button" @click="addCustomRecipient" class="btn-secondary btn-sm flex-1 text-xs">
+                    {{ editingCustomIdx >= 0 ? 'Simpan Perubahan Penerima' : '+ Tambahkan ke Daftar Tujuan' }}
+                  </button>
+                  <button v-if="editingCustomIdx >= 0" type="button" @click="cancelEditCustomRecipient" class="btn-secondary btn-sm text-xs">
+                    Batal
+                  </button>
+                </div>
                 <div v-if="disposisiForm.customRecipients.length" class="space-y-1 pt-1">
                   <div
                     v-for="(c, idx) in disposisiForm.customRecipients"
                     :key="idx"
-                    class="flex items-center justify-between bg-white px-2 py-1 rounded border text-xs"
+                    class="flex items-center justify-between gap-2 bg-white px-2 py-1.5 rounded border text-xs"
+                    :class="editingCustomIdx === idx ? 'border-amber-400 bg-amber-50' : ''"
                   >
-                    <span>{{ c.jabatan ? `${c.jabatan} (${c.nama})` : c.nama }}</span>
-                    <button type="button" class="text-red-600 hover:underline" @click="removeCustomRecipient(idx)">Hapus</button>
+                    <div class="min-w-0">
+                      <p class="font-medium text-gray-900 truncate">{{ c.jabatan ? `${c.jabatan} (${c.nama})` : c.nama }}</p>
+                      <p class="text-[10px] text-gray-500 truncate">
+                        {{ c.email || 'Email: -' }} &bull; {{ c.phone || 'WA: -' }}
+                      </p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                      <button type="button" class="text-amber-600 hover:underline font-medium" @click="editCustomRecipient(idx)">Edit</button>
+                      <button type="button" class="text-red-600 hover:underline font-medium" @click="removeCustomRecipient(idx)">Hapus</button>
+                    </div>
                   </div>
                 </div>
               </div>
