@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { generateNomorSppd } from '../composables/useNomorSurat.js'
+import { generateNomorSppd, getNextUnitYearlySequence } from '../composables/useNomorSurat.js'
 import { getUnitKode } from '../composables/useKopSurat.js'
 import { gasGet, gasPost } from '../api/gasClient.js'
 import { calculateSppd } from '../data/sppdData.js'
+import { useDocumentsStore } from './documents.js'
 
 export const useSppdStore = defineStore('sppd', () => {
   const sppdList = ref([])
@@ -27,24 +28,35 @@ export const useSppdStore = defineStore('sppd', () => {
     }
   }
 
+  function previewNextNomorSppd(unitId = 'rektor', date = new Date()) {
+    let allDocs = [...sppdList.value]
+    try {
+      const docStore = useDocumentsStore()
+      allDocs = [...allDocs, ...(docStore.documents || []), ...(docStore.agendaManual || [])]
+    } catch {}
+    const noUrut = getNextUnitYearlySequence(allDocs, unitId, date)
+    return generateNomorSppd({
+      noUrut,
+      unitKode: getUnitKode(unitId),
+      date,
+    })
+  }
+
   async function saveSppd(data, author) {
     const existingIdx = sppdList.value.findIndex(s => s.id === data.id)
-    
+
     if (existingIdx !== -1) {
       const updated = { ...sppdList.value[existingIdx], ...data, type: 'SPPD' }
       sppdList.value[existingIdx] = updated
       gasPost('update_document', updated).catch(console.error) // Optimistic
     } else {
-      const unitKode = getUnitKode(data.unitId || 'rektor')
-      const count = sppdList.value.filter(s => s.unitId === data.unitId && s.nomorSurat).length + 1
-      const nomorSurat = data.nomorSurat || generateNomorSppd({
-        noUrut: count,
-        unitKode,
-        date: new Date()
-      })
+      const unitId = data.unitId || 'rektor'
+      const manualNo = (data.nomorSurat || '').trim()
+      const nomorSurat = manualNo || previewNextNomorSppd(unitId, new Date())
 
       const newSppd = {
         ...data,
+        unitId,
         id: 'SPPD-' + Date.now(),
         nomorSurat,
         createdAt: new Date().toISOString(),
@@ -52,12 +64,12 @@ export const useSppdStore = defineStore('sppd', () => {
         isSPPD: true,
         type: 'SPPD'
       }
-      
+
       sppdList.value.push(newSppd)
       gasPost('save_document', newSppd).catch(console.error) // Optimistic
     }
   }
-  
+
   function getCalc(sppd) {
     return calculateSppd({
       zoneId: sppd.zoneId,
@@ -73,7 +85,8 @@ export const useSppdStore = defineStore('sppd', () => {
     const idx = sppdList.value.findIndex(s => s.id === id)
     if (idx !== -1) {
       sppdList.value.splice(idx, 1)
-      gasPost('delete_data', { table: 'SPPD', id }).catch(console.error) // Optimistic
+      // Perbaikan: SPPD disimpan di tabel Documents, bukan tabel SPPD
+      gasPost('delete_data', { table: 'Documents', id }).catch(console.error) // Optimistic
     }
   }
 
@@ -82,8 +95,9 @@ export const useSppdStore = defineStore('sppd', () => {
     sortedList,
     isLoading,
     fetchSPPDs,
+    previewNextNomorSppd,
     saveSppd,
-    deleteSppd,
-    getCalc
+    getCalc,
+    deleteSppd
   }
 })

@@ -73,6 +73,10 @@ const calc = computed(() => {
   })
 })
 
+const suggestedSppdNomor = computed(() => {
+  return sppdStore.previewNextNomorSppd(form.value.unitId || 'rektor', new Date())
+})
+
 const isSubmitting = ref(false)
 
 const handleSubmit = async () => {
@@ -150,13 +154,36 @@ const handleSubmit = async () => {
           </div>
           <button @click="addTraveler" class="btn-secondary btn-sm mb-4">+ Tambah Pelaksana (Pengikut)</button>
 
-          <div>
-            <label class="form-label">Nomor SPPD (Manual)</label><input v-model="form.nomorSurat" type="text" class="form-input mb-4" placeholder="Ketik manual nomor SPPD..." /><label class="form-label">Unit / Prodi Pengaju</label>
-            <select v-model="form.unitId" class="form-select">
-              <option v-for="u in allUnits" :key="u.id" :value="u.id">
-                [{{ u.kode }}] {{ u.label }}
-              </option>
-            </select>
+          <div class="space-y-3">
+            <div>
+              <label class="form-label">Unit / Prodi Pengaju</label>
+              <select v-model="form.unitId" class="form-select">
+                <option v-for="u in allUnits" :key="u.id" :value="u.id">
+                  [{{ u.kode }}] {{ u.label }}
+                </option>
+              </select>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="form-label mb-0">Nomor SPPD (Otomatis SOP / Manual)</label>
+                <button
+                  type="button"
+                  class="text-xs text-primary-700 hover:underline font-semibold"
+                  @click="form.nomorSurat = suggestedSppdNomor"
+                >
+                  Isi Otomatis SOP ({{ suggestedSppdNomor }})
+                </button>
+              </div>
+              <input
+                v-model="form.nomorSurat"
+                type="text"
+                class="form-input font-mono text-sm"
+                :placeholder="`Kosongkan untuk otomatis: ${suggestedSppdNomor}`"
+              />
+              <p class="text-[11px] text-gray-500 mt-1">
+                Format SOP: <code>[Urut].12/SPPD/[Unit]/[BulanRomawi]/[Tahun]</code>. Anda tetap dapat mengetik manual bila diperlukan.
+              </p>
+            </div>
           </div>
         </div>
 

@@ -1,8 +1,13 @@
 ﻿import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { generateNomorSuratKeluar } from '../composables/useNomorSurat.js'
+import {
+  generateNomorSuratKeluar,
+  generateNomorFormulirHR,
+  getNextUnitYearlySequence,
+} from '../composables/useNomorSurat.js'
 import { getUnitKode } from '../composables/useKopSurat.js'
 import { gasGet, gasPost } from '../api/gasClient.js'
+import { useSppdStore } from './sppd.js'
 
 export const DOCUMENT_STATUSES = [
   { key: 'draft', label: 'Draft', color: 'gray', step: 0 },
@@ -13,9 +18,10 @@ export const DOCUMENT_STATUSES = [
 ]
 
 export const DEFAULT_SIGNER = {
-  nama:   'Abdul6amid, S.Kom., M.M., M.Kom.',
+  nama:   'Abdul Hamid, S.Kom., M.M., M.Kom.',
   jabatan: 'Rektor Universitas Sapta Mandiri',
   nidn:   '1101018501',
+  nik:    '711018210693',
 }
 
 export const useDocumentsStore = defineStore('documents', () => {
@@ -34,12 +40,43 @@ export const useDocumentsStore = defineStore('documents', () => {
     [...agendaManual.value].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
   )
 
+  /** Gabungkan semua record bernomor (Surat Keluar + Agenda Manual + SPPD) untuk hitung max+1 anti-dobel */
+  function getAllNumberedRecords() {
+    let sppdRecords = []
+    try {
+      const sppdStore = useSppdStore()
+      sppdRecords = sppdStore.sppdList || []
+    } catch {}
+    return [...documents.value, ...agendaManual.value, ...sppdRecords]
+  }
+
+  function previewNextNomorSurat({ unitId, kodeSurat, date = new Date() }) {
+    const noUrut = getNextUnitYearlySequence(getAllNumberedRecords(), unitId, date)
+    return generateNomorSuratKeluar({
+      noUrut,
+      kodeSurat,
+      unitKode: getUnitKode(unitId),
+      date,
+    })
+  }
+
+  function previewNextNomorHR({ kodeForm, singkatanForm, kategori, date = new Date() }) {
+    const noUrut = getNextUnitYearlySequence(getAllNumberedRecords(), 'kep', date)
+    return generateNomorFormulirHR({
+      noUrut,
+      kodeForm,
+      singkatanForm,
+      kategori,
+      date,
+    })
+  }
+
   async function fetchDocuments() {
     isLoading.value = true
     try {
       const res = await gasGet('get_documents')
       if (res && res.success) {
-        documents.value = res.documents.filter(d => d.type === 'SuratKeluar' || (!d.isSPPD && !d.asalSurat && d.type !== 'AgendaManual'))
+        documents.value = res.documents.filter(d => d.type === 'SuratKeluar' || (!d.isSPPD && !d.asalSurat && d.type !== 'AgendaManual' && d.type !== 'SuratMasuk' && !String(d.id).startsWith('SM-')))
         agendaManual.value = res.documents.filter(d => d.type === 'AgendaManual')
       }
     } catch (e) {
@@ -78,37 +115,52 @@ export const useDocumentsStore = defineStore('documents', () => {
       statusHistory: [{ status: 'draft', at: new Date().toISOString(), by: author.name }],
       tte: null,
     }
-    
-    // ?? Optimasi: Instantly add to local state for < 1s lead time
+
     documents.value.push(doc)
-    
-    // Background sync
+
     gasPost('save_document', doc).then(res => {
       if (res && res.success && res.document) {
-        // Update local with driveFileId and URL if generated
         Object.assign(doc, res.document)
       }
     }).catch(console.error)
-    
+
     return doc
+  }
+
+  /**
+   * Generate nomor otomatis sesuai SOP (Per Unit per Tahun, Max+1 anti-dobel) untuk sebuah Surat Keluar
+   */
+  async function assignSopNumber(docId, date = new Date()) {
+    const doc = documents.value.find(d => d.id === docId)
+    if (!doc) return null
+
+    const nomor = previewNextNomorSurat({
+      unitId: doc.unitId || 'rektor',
+      kodeSurat: doc.kodeSurat || 'ST',
+      date,
+    })
+    doc.nomorSurat = nomor
+    gasPost('update_document', doc).catch(console.error)
+    return nomor
   }
 
   async function advanceStatus(docId, author, signerUser, extraData = {}) {
     const doc = documents.value.find(d => d.id === docId)
-    if (!doc) return
+    if (!doc) return { success: false, error: 'Dokumen tidak ditemukan.' }
     const nextStatus = getNextStatus(doc.status)
-    if (nextStatus === doc.status) return
+    if (nextStatus === doc.status) return { success: false, error: 'Status sudah tahap akhir.' }
+
+    // SOP Penomoran: Surat wajib sudah diberi nomor oleh TU sebelum masuk tahap Menunggu TTE
+    if (doc.status === 'penomoran' && nextStatus === 'menunggu_tte' && !doc.nomorSurat) {
+      return {
+        success: false,
+        error: 'Nomor surat wajib ditetapkan terlebih dahulu (Generate Otomatis SOP atau Input Manual) sebelum diajukan ke TTE!'
+      }
+    }
 
     doc.status = nextStatus
     doc.statusHistory.push({ status: nextStatus, at: new Date().toISOString(), by: author.name })
     Object.assign(doc, extraData)
-
-    if (nextStatus === 'penomoran' && !doc.nomorSurat) {
-      const count = documents.value.filter(d => d.unitId === doc.unitId && d.nomorSurat).length + 1
-      doc.nomorSurat = generateNomorSuratKeluar({
-        noUrut: count, kodeSurat: doc.kodeSurat, unitKode: getUnitKode(doc.unitId), date: new Date(),
-      })
-    }
 
     if (nextStatus === 'selesai' && signerUser) {
       doc.tte = {
@@ -118,24 +170,26 @@ export const useDocumentsStore = defineStore('documents', () => {
     }
 
     gasPost('update_document', doc).catch(console.error) // Optimistic
+    return { success: true }
   }
 
   async function signDocument(docId, author, signerUser, extraData = {}) {
     const doc = documents.value.find(d => d.id === docId)
-    if (!doc || doc.status === 'selesai') return
+    if (!doc || doc.status === 'selesai') return { success: false }
+
+    // SOP Ketat: Nomor surat tidak boleh otomatis meloncat di tahap TTE; wajib sudah disiapkan TU
+    if (!doc.nomorSurat) {
+      return {
+        success: false,
+        error: 'Nomor surat belum ditetapkan! Harap tetapkan nomor surat di tahap Penomoran TU (atau klik Set Nomor Manual) sebelum melakukan TTE.'
+      }
+    }
 
     if (!doc.shareToken) {
       doc.shareToken = generateShareToken()
     }
     doc.status = 'selesai'
     doc.statusHistory.push({ status: 'selesai', at: new Date().toISOString(), by: author.name })
-
-    if (!doc.nomorSurat) {
-      const count = documents.value.filter(d => d.unitId === doc.unitId && d.nomorSurat).length + 1
-      doc.nomorSurat = generateNomorSuratKeluar({
-        noUrut: count, kodeSurat: doc.kodeSurat, unitKode: getUnitKode(doc.unitId), date: new Date(),
-      })
-    }
 
     Object.assign(doc, extraData)
 
@@ -147,7 +201,6 @@ export const useDocumentsStore = defineStore('documents', () => {
       }
     }
 
-    // Jika membawa fileBase64 (misal hasil stempel QR atau upload PDF BSrE), tunggu respons agar driveViewUrl langsung diperbarui
     if (extraData.fileBase64) {
       const res = await gasPost('update_document', doc)
       if (res && res.success && res.document) {
@@ -172,20 +225,18 @@ export const useDocumentsStore = defineStore('documents', () => {
     const idx = documents.value.findIndex(d => d.id === id)
     if (idx !== -1) {
       const updatedDoc = { ...documents.value[idx], ...updates }
-      const res = await gasPost('update_document', updatedDoc)
-      
-      if (!res || !res.success) {
-        alert('Gagal mengupdate dokumen ke database! Error: ' + (res?.error || 'Koneksi terputus/File terlalu besar'))
-        return false
-      }
-      
-      // Update local state ONLY if backend succeeds
-      // Note: Backend strips fileBase64, so we should keep the stripped version 
-      // or rely on a fresh fetch. But for now, we'll just merge what backend would have.
-      if (updates.fileBase64 && res.id) {
-         delete updatedDoc.fileBase64
-      }
       documents.value[idx] = updatedDoc
+      if (updates.fileBase64) {
+        const res = await gasPost('update_document', updatedDoc)
+        if (!res || !res.success) {
+          alert('Gagal mengupdate dokumen ke database! Error: ' + (res?.error || 'Koneksi terputus/File terlalu besar'))
+          return false
+        }
+        if (res.document) Object.assign(documents.value[idx], res.document)
+        else delete documents.value[idx].fileBase64
+        return true
+      }
+      gasPost('update_document', updatedDoc).catch(console.error)
       return true
     }
     return false
@@ -202,24 +253,41 @@ export const useDocumentsStore = defineStore('documents', () => {
   }
 
   function generateNomorManual(data, author) {
-    const systemCount = documents.value.filter(d => d.unitId === data.unitId && d.nomorSurat).length
-    const manualCount = agendaManual.value.filter(d => d.unitId === data.unitId).length
-    const noUrut = systemCount + manualCount + 1
+    const targetDate = data.tanggal ? new Date(data.tanggal) : new Date()
+    let nomorSurat = (data.customNomor || '').trim()
+    let unitId = data.unitId || 'rektor'
 
-    const nomorSurat = generateNomorSuratKeluar({
-      noUrut, kodeSurat: data.kodeSurat, unitKode: getUnitKode(data.unitId), date: new Date(data.tanggal),
-    })
+    if (data.isFormulirHR) {
+      unitId = 'kep'
+      if (!nomorSurat) {
+        nomorSurat = previewNextNomorHR({
+          kodeForm: data.kodeForm || '01',
+          singkatanForm: data.singkatanForm || 'FCT',
+          kategori: data.kategori || 'Ds',
+          date: targetDate,
+        })
+      }
+    } else if (!nomorSurat) {
+      nomorSurat = previewNextNomorSurat({
+        unitId,
+        kodeSurat: data.kodeSurat || 'ST',
+        date: targetDate,
+      })
+    }
 
     const record = {
       id: 'MANUAL-' + Date.now(),
       type: 'AgendaManual',
       nomorSurat,
       ...data,
+      unitId,
       createdBy: author.name,
       createdAt: new Date().toISOString()
     }
+    delete record.customNomor
+
     agendaManual.value.push(record)
-    gasPost('save_document', record)
+    gasPost('save_document', record).catch(console.error)
     return record
   }
 
@@ -227,7 +295,8 @@ export const useDocumentsStore = defineStore('documents', () => {
     const idx = agendaManual.value.findIndex(d => d.id === id)
     if (idx !== -1) {
       agendaManual.value[idx] = { ...agendaManual.value[idx], ...updates }
-      await gasPost('update_data', { table: 'AgendaManual', record: agendaManual.value[idx] })
+      // Perbaikan: AgendaManual disimpan di tabel Documents (sama seperti save_document)
+      gasPost('update_document', agendaManual.value[idx]).catch(console.error)
     }
   }
 
@@ -235,7 +304,7 @@ export const useDocumentsStore = defineStore('documents', () => {
     const idx = agendaManual.value.findIndex(d => d.id === id)
     if (idx !== -1) {
       agendaManual.value.splice(idx, 1)
-      await gasPost('delete_data', { table: 'AgendaManual', id })
+      gasPost('delete_data', { table: 'Documents', id }).catch(console.error)
     }
   }
 
@@ -243,6 +312,7 @@ export const useDocumentsStore = defineStore('documents', () => {
     documents, agendaManual, isLoading, DOCUMENT_STATUSES, DEFAULT_SIGNER,
     totalDocuments, pendingApprovals, sortedDocuments, sortedAgenda,
     fetchDocuments, getStatusInfo, getNextStatus, getPrevStatus,
+    previewNextNomorSurat, previewNextNomorHR, assignSopNumber,
     createDocument, advanceStatus, signDocument, rejectDocument,
     updateDocument, deleteDocument, generateNomorManual, updateAgenda, deleteAgenda
   }

@@ -190,15 +190,32 @@ const stampPdfWithQR = async (base64Pdf, qrDataUrl, signer) => {
 const isEditingNomor = ref(false)
 const manualNomor = ref('')
 
+const suggestedSopNomor = computed(() => {
+  if (!doc.value) return ''
+  return docStore.previewNextNomorSurat({
+    unitId: doc.value.unitId || form.value.unitId || 'rektor',
+    kodeSurat: doc.value.kodeSurat || form.value.kodeSurat || 'ST',
+    date: new Date(),
+  })
+})
+
 const startEditNomor = () => {
-  manualNomor.value = doc.value?.nomorSurat || ''
+  manualNomor.value = doc.value?.nomorSurat || suggestedSopNomor.value || ''
   isEditingNomor.value = true
 }
 
 const saveNomor = async () => {
   if (doc.value) {
-    await docStore.updateDocument(doc.value.id, { nomorSurat: manualNomor.value || null })
+    await docStore.updateDocument(doc.value.id, { nomorSurat: manualNomor.value.trim() || null })
     isEditingNomor.value = false
+  }
+}
+
+const generateAutoSopNomor = async () => {
+  if (!doc.value) return
+  const generated = await docStore.assignSopNumber(doc.value.id)
+  if (generated) {
+    manualNomor.value = generated
   }
 }
 
@@ -525,14 +542,22 @@ const rejectReason = ref('')
 
 const advanceDoc = async () => {
   if (!doc.value) return
-  await docStore.advanceStatus(doc.value.id, auth.currentUser, null)
+  const res = await docStore.advanceStatus(doc.value.id, auth.currentUser, null)
+  if (res && !res.success && res.error) {
+    alert(res.error)
+    return
+  }
   if (doc.value.status === 'verifikasi' || doc.value.status === 'menunggu_tte') {
     triggerStageNotif(doc.value)
   }
 }
 
 const signDocBasah = async () => {
-  await docStore.signDocument(doc.value.id, auth.currentUser, auth.currentUser, { tteMethod: 'basah' })
+  const res = await docStore.signDocument(doc.value.id, auth.currentUser, auth.currentUser, { tteMethod: 'basah' })
+  if (res && !res.success && res.error) {
+    alert(res.error)
+    return
+  }
   if (outgoingRecipients.value.length > 0) {
     triggerStageNotif(doc.value, 'Surat Resmi Universitas Sapta Mandiri', outgoingRecipients.value)
   }
@@ -824,9 +849,46 @@ const tteBadgeLabel = computed(() => {
               </div>
 
               <div v-if="doc.status !== 'selesai'" class="border-t border-gray-100 pt-3 space-y-3">
+                <!-- Panel Khusus Penomoran TU (Wajib sebelum Menunggu TTE) -->
+                <div
+                  v-if="doc.status === 'penomoran' && (isAdmin || auth.currentUser?.role === 'tu' || auth.isUnitAdmin)"
+                  class="bg-blue-50 border border-blue-200 p-3.5 rounded-lg space-y-2.5 text-xs"
+                >
+                  <p class="font-bold text-blue-900 border-b border-blue-200 pb-1.5">Penetapan Nomor Surat (Tahap TU)</p>
+                  <div v-if="doc.nomorSurat" class="bg-white border border-blue-200 rounded p-2">
+                    <span class="text-gray-500 block text-[10px]">Nomor Terpasang:</span>
+                    <span class="font-mono font-bold text-primary-900 text-sm">{{ doc.nomorSurat }}</span>
+                  </div>
+                  <p v-else class="text-amber-800 bg-amber-50 border border-amber-200 rounded p-2">
+                    Nomor surat belum ditetapkan. Pilih <strong>Generate Otomatis SOP</strong> atau ketik manual sebelum lanjut ke TTE.
+                  </p>
+                  <button
+                    type="button"
+                    class="btn-primary btn-sm w-full text-xs"
+                    @click="generateAutoSopNomor"
+                  >
+                    Generate Otomatis SOP ({{ suggestedSopNomor }})
+                  </button>
+                  <div class="space-y-1.5 pt-1 border-t border-blue-200">
+                    <label class="block text-[11px] font-medium text-blue-900">Atau Masukkan Nomor Manual:</label>
+                    <div class="flex gap-1.5">
+                      <input
+                        v-model="manualNomor"
+                        type="text"
+                        class="form-input text-xs py-1 px-2 flex-1 font-mono bg-white"
+                        :placeholder="suggestedSopNomor"
+                      />
+                      <button type="button" class="btn-secondary btn-sm text-xs shrink-0" @click="saveNomor">
+                        Simpan
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 <button
                   v-if="canAdvance && doc.status !== 'menunggu_tte'"
                   class="btn-primary btn-sm w-full"
+                  :disabled="doc.status === 'penomoran' && !doc.nomorSurat"
                   @click="advanceDoc"
                 >
                   {{ doc.status === 'draft' ? 'Ajukan untuk Verifikasi Atasan' : doc.status === 'verifikasi' ? 'Setujui Verifikasi (Ke Penomoran)' : 'Lanjutkan ke Menunggu TTE' }}
@@ -838,6 +900,15 @@ const tteBadgeLabel = computed(() => {
                     Pengesahan & TTE (BSrE / Digital)
                   </p>
 
+                  <div v-if="!doc.nomorSurat" class="bg-amber-50 border border-amber-300 text-amber-900 p-3 rounded-lg text-xs space-y-2">
+                    <p class="font-bold">Nomor Surat Belum Ditetapkan!</p>
+                    <p>Sesuai SOP, surat tidak dapat ditandatangani (TTE) sebelum memiliki nomor surat resmi. Minta TU menetapkan nomor atau klik tombol di bawah (khusus Admin):</p>
+                    <button v-if="isAdmin" type="button" class="btn-primary btn-sm w-full text-xs" @click="generateAutoSopNomor">
+                      Generate Nomor SOP Sekarang ({{ suggestedSopNomor }})
+                    </button>
+                  </div>
+
+                  <template v-else>
                   <!-- Opsi 1: TTE Barcode / API BSrE -->
                   <div class="space-y-1.5">
                     <p class="text-xs font-semibold text-primary-900">Opsi 1: TTE Barcode / Integrasi API BSrE</p>
@@ -889,6 +960,7 @@ const tteBadgeLabel = computed(() => {
                       Sahkan dengan TTD Basah
                     </button>
                   </div>
+                  </template>
                 </div>
 
                 <button class="btn-danger btn-sm w-full" v-if="doc.status !== 'draft'" @click="showRejectModal = true">
